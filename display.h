@@ -25,8 +25,13 @@
 #define LOW 0
 #define HIGH 1
 
+/* Width and height of the screen in pixels. */
 #define WIDTH  132
 #define HEIGHT 65
+
+/* Width and height of the screen in printable characters. */
+#define CHAR_WIDTH 26
+#define CHAR_HEIGHT 9
 
 void sleepMillis(int ms);
 

@@ -146,6 +146,6 @@ void putchar(char c) {
   if (c >= FONT_OFFSET) {
     for (i = 0; i < FONT_WIDTH; i++)
       txData(font[c - FONT_OFFSET][i]);
-    txData(0x00);
+    /*    txData(0x00);*/
   }
 }
