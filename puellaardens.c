@@ -1,25 +1,32 @@
 /*
- * Puella Ardens
+ * Puella Ardens - Burning Man GirlTech based IM communicator.
  *
- * Burning Man GirlTech based IM communicator.
+ * puellaardens.c : Main entry point.
  */
 
 
 #include <cc1110.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
-#include "ioCCxx10_bitdef.h"
-#include "display.h"
-#include "keys.h"
+
 #include "5x7.h"
-#include "stdio.h"
+#include "compose_view.h"
+#include "display.h"
+#include "ioCCxx10_bitdef.h"
+#include "keys.h"
+#include "message.h"
 #include "puellaardens.h"
 #include "pm.h"
 #include "radio.h"
 
 /* globals */
 __xdata MessageInfo msg_buffer[NUM_MESSAGES];
+
+uint8_t state;
 bit sleepy;
+
+/* Variables in view state */
 uint8_t cur_msg;
 uint8_t first_msg;
 uint8_t last_msg;
@@ -124,7 +131,7 @@ uint8_t draw_message(const MessageInfo* msg, uint8_t row) {
   return row;
 }
 
-void draw() {
+void draw_view() {
   uint8_t row, msg;
 
   clear();
@@ -137,12 +144,11 @@ void draw() {
   }
 }
 
-void print_message(const char* msg, int row, int col) {
-  setDisplayStart(0);
-  SSN = LOW;
-  setCursor(row, col);
-  printf(msg);
-  SSN = HIGH;
+void draw() {
+  switch (state) {
+    case STATE_VIEW: draw_view(); break;
+    case STATE_COMPOSE: compose_draw(); break;
+  }
 }
 
 void move_to_next_message() {
@@ -159,26 +165,54 @@ void move_to_prev_message() {
 }
 
 void poll_keyboard() {
-  switch (getkey()) {
-    case KMNU:
-      print_message("matt is a dork", 0, 0);
-      break;
-    case '^':
-    case '<':
-      move_to_prev_message();
-      draw();
-      break;
-    case KDWN:
-    case '>':
-      move_to_next_message();
-      draw();
-      break;
-    case KPWR:
-      sleepy = 1;
-      break;
-    default:
-      break;
+  uint8_t key = getkey();
+
+  /* Handle state specific keypresses. */
+  if (state == STATE_VIEW) {
+    switch (key) {
+      case KMNU:
+        state = STATE_COMPOSE;
+        draw();
+        break;
+      case '^':
+      case '<':
+        move_to_prev_message();
+        draw();
+        break;
+      case KDWN:
+      case '>':
+        move_to_next_message();
+        draw();
+        break;
+      case KPWR:
+        sleepy = 1;
+        break;
+      default:
+        break;
+    }
+  } else if (state == STATE_COMPOSE) {
+    switch (key) {
+      case KMNU:
+        state = STATE_VIEW;
+        draw();
+        break;
+      case KPWR:
+        sleepy = 1;
+        break;
+      default:
+        compose_handle_keypress(key);
+        break;
+    }
   }
+}
+
+/* Convenience function for debugging. */
+void print_message(const char* msg, int row, int col) {
+  setDisplayStart(0);
+  SSN = LOW;
+  setCursor(row, col);
+  printf(msg);
+  SSN = HIGH;
 }
 
 void main(void) {
@@ -189,6 +223,9 @@ void main(void) {
   
 reset:
   sleepy = 0;
+  state = STATE_VIEW;
+
+  compose_new_message();
 
   /* Setup display. */
   xtalClock();
