@@ -1,7 +1,7 @@
 /*
  * Puella Ardens - Burning Man GirlTech based IM communicator.
  *
- * compose_view : Code for handling all UI actions in the message
+ * compose_view.h : Code for handling all UI actions in the message
  * composition view.
  */
 

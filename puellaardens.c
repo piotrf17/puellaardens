@@ -13,6 +13,7 @@
 #include "5x7.h"
 #include "compose_view.h"
 #include "display.h"
+#include "inbox_view.h"
 #include "ioCCxx10_bitdef.h"
 #include "keys.h"
 #include "message.h"
@@ -20,181 +21,34 @@
 #include "pm.h"
 #include "radio.h"
 
-/* globals */
-__xdata MessageInfo msg_buffer[NUM_MESSAGES];
-
-uint8_t state;
-bit sleepy;
-
-/* Variables in view state */
-uint8_t cur_msg;
-uint8_t first_msg;
-uint8_t last_msg;
-
-void init_test_messages() {
-#define ADD_TEST_MSG(_i, _msg, _attr)     \
-  strcpy(msg_buffer[_i].text, _msg); \
-  msg_buffer[_i].attr = _attr;
-
-  ADD_TEST_MSG(16, "MATT IS A DORK.  ALSO HE SMELLS FUNNY.", 0);
-  ADD_TEST_MSG(17, "DINNER SERVING IN 30 MINUTES, SLOP FOR ALL.", 0);
-  ADD_TEST_MSG(18, "MASSIVE WHITEOUT COMING, TAKE COVER!", MSG_ATTR_NEW | MSG_ATTR_MINE | MSG_ATTR_SENT);
-  ADD_TEST_MSG(19, "THIS MESSAGE IS LONG, TO TEST OUT LONG MESSAGES.  IT IS 3 LINES LONG.", MSG_ATTR_NEW);
-  ADD_TEST_MSG(20, "SWEET LEITSHOW STARTING IN 22 MINUTES", MSG_ATTR_NEW);
-  ADD_TEST_MSG(21, "WILD ELMO HAS APPEARED.", MSG_ATTR_NEW | MSG_ATTR_MINE);
-  ADD_TEST_MSG(0, "SNELLA CAME BY THE DOME AND ATE ALL THE FOOD", MSG_ATTR_NEW);
-  ADD_TEST_MSG(1, "ANYONE WANT TO TIME TRAVEL?  LEAVING 5 MINUTES AGO", MSG_ATTR_NEW);
-  ADD_TEST_MSG(2, "TOILETS ARE ALL FULL #POOPTROUBLES", MSG_ATTR_NEW);
-  ADD_TEST_MSG(3, "HENRY HAS A STINKY BUTT", MSG_ATTR_NEW);
-  
-#undef ADD_TEST_MSG
-  
-  cur_msg = 18;
-  first_msg = 16;
-  last_msg = 3;
-}
-
-uint8_t draw_message(const MessageInfo* msg, uint8_t row) {
-  uint8_t msg_len = strlen(msg->text);
-  uint8_t msg_pos = 0;
-  uint8_t col = 0;
-  bit last_row = 0;
-  
-  SSN = LOW;
-  setDisplayStart(0);
-
-  /* Render the first row, which is 1 short for indicators. */
-  if (msg_len <= CHAR_WIDTH - 1) {
-    last_row = 1;
-  }
-  setCursor(row, 0);
-  for (col = 0; col < CHAR_WIDTH - 1 && msg_pos < msg_len; ++col, ++msg_pos) {
-    if (last_row) {
-      putchar_mask(msg->text[msg_pos], 0x80);
-    } else {
-      putchar(msg->text[msg_pos]);
-    }
-  }
-  if (last_row) {
-    for (col; col < CHAR_WIDTH - 1; ++col) {
-      putchar_mask(' ', 0x80);
-    }
-  }
-  ++row;
-
-  /* Render any message indicators. */
-  txData(0xFF);
-  txData(0x80);
-  if (msg->attr & MSG_ATTR_MINE) {
-    if (msg->attr & MSG_ATTR_SENT) {
-      putchar_mask('M', 0x80);
-    } else {
-      putchar_mask('?', 0x80);
-    }
-  } else {
-    if (msg->attr & MSG_ATTR_NEW) {
-      putchar_mask('*', 0x80);
-    } else {
-      putchar_mask(' ', 0x80);
-    }
-  }
-
-  /* Render the remaining rows of the message */
-  while (row < CHAR_HEIGHT && msg_pos < msg_len) {
-    if (msg_pos >= msg_len - CHAR_WIDTH) {
-      last_row = 1;
-    }
-
-    /* Draw the text on this row. */
-    setCursor(row, 0);
-    for (col = 0; col < CHAR_WIDTH && msg_pos < msg_len; ++col, ++msg_pos) {
-      if (last_row) {
-        putchar_mask(msg->text[msg_pos], 0x80);
-      } else {
-        putchar(msg->text[msg_pos]);
-      }
-    }
-    
-    /* Finish drawing the line on the last row. */
-    if (last_row) {
-      for (col; col < CHAR_WIDTH; ++col) {
-        putchar_mask(' ', 0x80);
-      }
-      txData(0x80);
-      txData(0x80);
-    }
-    
-    ++row;
-  }
-  
-  SSN = HIGH;
-  return row;
-}
-
-void draw_view() {
-  uint8_t row, msg;
-
-  clear();
-
-  row = 0;
-  for (msg = cur_msg;
-       msg != (last_msg + 1) % NUM_MESSAGES && row < CHAR_HEIGHT;
-       msg = (msg + 1) % NUM_MESSAGES) {
-    row = draw_message(&msg_buffer[msg], row);
-  }
-}
-
-void draw() {
-  switch (state) {
-    case STATE_VIEW: draw_view(); break;
-    case STATE_COMPOSE: compose_draw(); break;
-  }
-}
-
-void move_to_next_message() {
-  if (cur_msg != last_msg) {
-    msg_buffer[cur_msg].attr &= ~MSG_ATTR_NEW;
-    cur_msg = (cur_msg + 1) % NUM_MESSAGES;
-  }
-}
-
-void move_to_prev_message() {
-  if (cur_msg != first_msg) {
-    cur_msg = (cur_msg + NUM_MESSAGES - 1) % NUM_MESSAGES;
-  }
-}
+/* File global variables. */
+static uint8_t state;
+static bit sleepy;
 
 void poll_keyboard() {
   uint8_t key = getkey();
+  if (key == 0) {
+    return;
+  }
 
-  /* Handle state specific keypresses. */
   if (state == STATE_VIEW) {
     switch (key) {
       case KMNU:
         state = STATE_COMPOSE;
-        draw();
-        break;
-      case '^':
-      case '<':
-        move_to_prev_message();
-        draw();
-        break;
-      case KDWN:
-      case '>':
-        move_to_next_message();
-        draw();
+        compose_draw();
         break;
       case KPWR:
         sleepy = 1;
         break;
       default:
+        inbox_handle_keypress(key);
         break;
     }
   } else if (state == STATE_COMPOSE) {
     switch (key) {
       case KMNU:
         state = STATE_VIEW;
-        draw();
+        inbox_draw();
         break;
       case KPWR:
         sleepy = 1;
@@ -233,7 +87,8 @@ reset:
   configureSPI();
   LCDReset();
 
-  init_test_messages();
+  inbox_init_test_messages();
+  inbox_draw();
 
   if (test_radio) {
     /* Setup radio. */
@@ -261,9 +116,6 @@ reset:
     setCursor(3, 0);
     printf("%d bytes recvd", num_rcvd);
     SSN = HIGH;
-  } else {
-    init_test_messages();
-    draw();
   }
 
   while (1) {

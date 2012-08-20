@@ -1,6 +1,5 @@
 /*
  * Puella Ardens - Burning Man GirlTech based IM communicator.
- *
  */
 
 #include <cc1110.h>
@@ -15,7 +14,7 @@
 static __xdata char compose_buffer[MSG_TEXT_SIZE];
 static uint8_t cursor_pos;
 
-/* Internal functions */
+/* Internal functions. */
 
 static void add_char(char c) {
   compose_buffer[cursor_pos] = c;
@@ -23,7 +22,7 @@ static void add_char(char c) {
   ++cursor_pos;
 }
 
-/* Public API */
+/* Public API. */
 
 void compose_new_message() {
   cursor_pos = 0;

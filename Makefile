@@ -1,7 +1,7 @@
 # Puella Ardens
 # GirlTech Burning Man Communicator
 
-libs = display.rel keys.rel pm.rel radio.rel compose_view.rel
+libs = compose_view.rel display.rel inbox_view.rel keys.rel pm.rel radio.rel compose_view.rel
 CC = sdcc
 CFLAGS = --no-pack-iram
 LFLAGS = --xram-loc 0xF000
