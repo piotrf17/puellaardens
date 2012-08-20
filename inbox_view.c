@@ -12,10 +12,10 @@
 #include "message.h"
 
 /* File global variables. */
-static __xdata MessageInfo msg_buffer[NUM_MESSAGES];
-static uint8_t cur_msg;
-static uint8_t first_msg;
-static uint8_t last_msg;
+static __xdata MessageInfo msg_buffer_[NUM_MESSAGES];
+static uint8_t cur_msg_;
+static uint8_t first_msg_;
+static uint8_t last_msg_;
 
 /* Internal functions. */
 
@@ -97,15 +97,15 @@ uint8_t draw_message(const MessageInfo* msg, uint8_t row) {
 }
 
 void move_to_next_message() {
-  if (cur_msg != last_msg) {
-    msg_buffer[cur_msg].attr &= ~MSG_ATTR_NEW;
-    cur_msg = (cur_msg + 1) % NUM_MESSAGES;
+  if (cur_msg_ != last_msg_) {
+    msg_buffer_[cur_msg_].attr &= ~MSG_ATTR_NEW;
+    cur_msg_ = (cur_msg_ + 1) % NUM_MESSAGES;
   }
 }
 
 void move_to_prev_message() {
-  if (cur_msg != first_msg) {
-    cur_msg = (cur_msg + NUM_MESSAGES - 1) % NUM_MESSAGES;
+  if (cur_msg_ != first_msg_) {
+    cur_msg_ = (cur_msg_ + NUM_MESSAGES - 1) % NUM_MESSAGES;
   }
 }
 
@@ -113,8 +113,8 @@ void move_to_prev_message() {
 
 void inbox_init_test_messages() {
 #define ADD_TEST_MSG(_i, _msg, _attr)     \
-  strcpy(msg_buffer[_i].text, _msg); \
-  msg_buffer[_i].attr = _attr;
+  strcpy(msg_buffer_[_i].text, _msg); \
+  msg_buffer_[_i].attr = _attr;
 
   ADD_TEST_MSG(16, "MATT IS A DORK.  ALSO HE SMELLS FUNNY.", 0);
   ADD_TEST_MSG(17, "DINNER SERVING IN 30 MINUTES, SLOP FOR ALL.", 0);
@@ -129,9 +129,9 @@ void inbox_init_test_messages() {
   
 #undef ADD_TEST_MSG
   
-  cur_msg = 18;
-  first_msg = 16;
-  last_msg = 3;
+  cur_msg_ = 18;
+  first_msg_ = 16;
+  last_msg_ = 3;
 }
 
 void inbox_draw() {
@@ -140,10 +140,10 @@ void inbox_draw() {
   clear();
 
   row = 0;
-  for (msg = cur_msg;
-       msg != (last_msg + 1) % NUM_MESSAGES && row < CHAR_HEIGHT;
+  for (msg = cur_msg_;
+       msg != (last_msg_ + 1) % NUM_MESSAGES && row < CHAR_HEIGHT;
        msg = (msg + 1) % NUM_MESSAGES) {
-    row = draw_message(&msg_buffer[msg], row);
+    row = draw_message(&msg_buffer_[msg], row);
   }
 }
 
