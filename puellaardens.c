@@ -29,22 +29,22 @@ void init_test_messages() {
   strcpy(msg_buffer[_i].text, _msg); \
   msg_buffer[_i].attr = _attr;
 
-  ADD_TEST_MSG(0, "MATT IS A DORK.  ALSO HE SMELLS FUNNY.", 0);
-  ADD_TEST_MSG(1, "DINNER SERVING IN 30 MINUTES, SLOP FOR ALL.", 0);
-  ADD_TEST_MSG(2, "MASSIVE WHITEOUT COMING, TAKE COVER!", MSG_ATTR_NEW | MSG_ATTR_MINE | MSG_ATTR_SENT);
-  ADD_TEST_MSG(3, "THIS MESSAGE IS LONG, TO TEST OUT LONG MESSAGES.  IT IS 3 LINES LONG.", MSG_ATTR_NEW);
-  ADD_TEST_MSG(4, "SWEET LEITSHOW STARTING IN 22 MINUTES", MSG_ATTR_NEW);
-  ADD_TEST_MSG(5, "WILD ELMO HAS APPEARED.", MSG_ATTR_NEW | MSG_ATTR_MINE);
-  ADD_TEST_MSG(6, "SNELLA CAME BY THE DOME AND ATE ALL THE FOOD", MSG_ATTR_NEW);
-  ADD_TEST_MSG(7, "ANYONE WANT TO TIME TRAVEL?  LEAVING 5 MINUTES AGO", MSG_ATTR_NEW);
-  ADD_TEST_MSG(8, "TOILETS ARE ALL FULL #POOPTROUBLES", MSG_ATTR_NEW);
-  ADD_TEST_MSG(9, "HENRY HAS A STINKY BUTT", MSG_ATTR_NEW);
+  ADD_TEST_MSG(16, "MATT IS A DORK.  ALSO HE SMELLS FUNNY.", 0);
+  ADD_TEST_MSG(17, "DINNER SERVING IN 30 MINUTES, SLOP FOR ALL.", 0);
+  ADD_TEST_MSG(18, "MASSIVE WHITEOUT COMING, TAKE COVER!", MSG_ATTR_NEW | MSG_ATTR_MINE | MSG_ATTR_SENT);
+  ADD_TEST_MSG(19, "THIS MESSAGE IS LONG, TO TEST OUT LONG MESSAGES.  IT IS 3 LINES LONG.", MSG_ATTR_NEW);
+  ADD_TEST_MSG(20, "SWEET LEITSHOW STARTING IN 22 MINUTES", MSG_ATTR_NEW);
+  ADD_TEST_MSG(21, "WILD ELMO HAS APPEARED.", MSG_ATTR_NEW | MSG_ATTR_MINE);
+  ADD_TEST_MSG(0, "SNELLA CAME BY THE DOME AND ATE ALL THE FOOD", MSG_ATTR_NEW);
+  ADD_TEST_MSG(1, "ANYONE WANT TO TIME TRAVEL?  LEAVING 5 MINUTES AGO", MSG_ATTR_NEW);
+  ADD_TEST_MSG(2, "TOILETS ARE ALL FULL #POOPTROUBLES", MSG_ATTR_NEW);
+  ADD_TEST_MSG(3, "HENRY HAS A STINKY BUTT", MSG_ATTR_NEW);
   
 #undef ADD_TEST_MSG
   
-  cur_msg = 0;
-  first_msg = 0;
-  last_msg = 9;
+  cur_msg = 18;
+  first_msg = 16;
+  last_msg = 3;
 }
 
 uint8_t draw_message(const MessageInfo* msg, uint8_t row) {
@@ -129,9 +129,10 @@ void draw() {
 
   clear();
 
-  /* TODO: This should be a circular buffer */
   row = 0;
-  for (msg = cur_msg; msg <= last_msg && row < CHAR_HEIGHT; ++msg) {
+  for (msg = cur_msg;
+       msg != (last_msg + 1) % NUM_MESSAGES && row < CHAR_HEIGHT;
+       msg = (msg + 1) % NUM_MESSAGES) {
     row = draw_message(&msg_buffer[msg], row);
   }
 }
@@ -146,6 +147,7 @@ void print_message(const char* msg, int row, int col) {
 
 void move_to_next_message() {
   if (cur_msg != last_msg) {
+    msg_buffer[cur_msg].attr &= ~MSG_ATTR_NEW;
     cur_msg = (cur_msg + 1) % NUM_MESSAGES;
   }
 }
