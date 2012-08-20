@@ -22,6 +22,8 @@
  * Boston, MA 02110-1301, USA.
  */
 
+#include <stdint.h>
+
 #define LOW 0
 #define HIGH 1
 
@@ -31,7 +33,7 @@
 
 /* Width and height of the screen in printable characters. */
 #define CHAR_WIDTH 26
-#define CHAR_HEIGHT 9
+#define CHAR_HEIGHT 8
 
 void sleepMillis(int ms);
 
@@ -70,3 +72,4 @@ void setNormalReverse(unsigned char normal);
 void clear();
 
 void putchar(char c);
+void putchar_mask(char c, uint8_t mask);

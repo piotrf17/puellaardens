@@ -139,7 +139,7 @@ void clear() {
 
 /* sdcc provides printf if we provide this */
 void putchar(char c) {
-  u8 i;
+  uint8_t i;
 
   c &= 0x7f;
 
@@ -148,4 +148,16 @@ void putchar(char c) {
       txData(font[c - FONT_OFFSET][i]);
     /*    txData(0x00);*/
   }
+}
+
+void putchar_mask(char c, uint8_t mask) {
+  uint8_t i;
+
+  c &= 0x7f;
+
+  if (c >= FONT_OFFSET) {
+    for (i = 0; i < FONT_WIDTH; i++)
+      txData(font[c - FONT_OFFSET][i] | mask);
+    /*    txData(0x00);*/
+  }  
 }
