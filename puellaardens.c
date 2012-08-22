@@ -89,7 +89,12 @@ void repeater_mode() {
 
 #define LEDR P1_1
 #define LEDG P1_0
+  clock_delayms(100);
+
   radio_init();
+  
+  clock_delayms(100);
+
 //    clear();
   while (1) {
     LEDR = 1; LEDG = 0;
@@ -109,11 +114,12 @@ void repeater_mode() {
  //   print_message("                                       ",1,0);
  //   print_message(buf, 1, 0);
 
-    LEDR = 0; LEDG = 1;
+    LEDR = 0; LEDG = 0;
 
     RFST = RFST_SIDLE;
-    clock_delayms(100);
+    clock_delayms(3000);
 
+    LEDR = 0; LEDG = 1;
  //   print_message("* Sending...",2,0);
 
     radio_send_packet(buf);

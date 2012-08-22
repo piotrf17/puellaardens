@@ -160,6 +160,7 @@ IOCFG0    =     0x00;       // Radio Test Signal Configuration (P1_5)
 
   PKTCTRL0 |= 1<<0;     // variable length
   PKTCTRL1 |= 1<<2;     // append_status
+  PKTCTRL1 |= 2<<5;     // preamble quality threshold
 
   RFST = RFST_SIDLE;
   
