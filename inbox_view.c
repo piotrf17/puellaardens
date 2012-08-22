@@ -109,8 +109,6 @@ void move_to_prev_message() {
   }
 }
 
-/* Public API. */
-
 void inbox_init_test_messages() {
 #define ADD_TEST_MSG(_i, _msg, _attr)     \
   strcpy(msg_buffer_[_i].text, _msg); \
@@ -132,6 +130,18 @@ void inbox_init_test_messages() {
   cur_msg_ = 18;
   first_msg_ = 16;
   last_msg_ = 3;
+}
+
+/* Public API. */
+
+void inbox_init() {
+  cur_msg_ = 0;
+  first_msg_ = 0;
+  last_msg_ = 0;
+
+  /* For testing purposes. */
+  /* TODO: remove this function. */
+  inbox_init_test_messages();
 }
 
 void inbox_draw() {

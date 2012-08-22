@@ -80,14 +80,16 @@ reset:
   sleepy = 0;
   state = STATE_VIEW;
 
-  /* Setup display. */
+  /* Initialize system modules. */
   clock_init();
   setIOPorts();
   configureSPI();
   LCDReset();
 
-  compose_new_message();
-  inbox_init_test_messages();
+  /* Initialize app modules. */
+  compose_init();
+  inbox_init();
+  
   inbox_draw();
 
   if (test_radio) {

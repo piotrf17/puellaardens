@@ -26,6 +26,35 @@
 
 static uint8_t active_key;
 
+static const uint8_t altkeys[] = {
+  '4',  /* A */
+  ')',  /* B */
+  '9',  /* C */
+  '6',  /* D */
+  '3',  /* E */
+  '\\', /* F */
+  '_',  /* G */
+  ':',  /* H */
+  '-',  /* I */
+  ';',  /* J */
+  '"',  /* K */
+  '\'', /* L */
+  '.',  /* M */
+  '!',  /* N */
+  '+',  /* O */
+  '=',  /* P */
+  '1',  /* Q */
+  '@',  /* R */
+  '5',  /* S */
+  '#',  /* T */
+  '&',  /* U */
+  '(',  /* V */
+  '2',  /* W */
+  '8',  /* X */
+  '$',  /* Y */
+  '7',  /* Z */
+};
+
 //8 rows, 10 columns
 static const uint8_t keychars[]={
   //gnd 0_1   1_2   1_3   1_4   1_5   1_6   1_7   0_6   0_7
@@ -141,4 +170,14 @@ uint8_t keys_get() {
     key = 0x00;
 
   return key;
+}
+
+uint8_t keys_altkey(uint8_t c) {
+  if (c == ',') {
+    return '?';
+  } else if (c >= 'A' && c <= 'Z') {
+    return altkeys[c - 'A'];
+  } else {
+    return c;
+  }
 }

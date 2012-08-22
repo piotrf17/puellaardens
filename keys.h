@@ -39,4 +39,7 @@ uint8_t keys_scan();
 /* Nonblocking, returns the debounced key press and avoids rapid repeating. */
 uint8_t keys_get();
 
+/* Return alternative key for the given key. */
+uint8_t keys_altkey(uint8_t c);
+
 #endif
