@@ -85,6 +85,75 @@ void radio_send_packet(const void *packet) { //send the packet over RF
 
 }
 
+void radio_regs(void) {
+/* Sync word qualifier mode = 30/32 sync word bits detected */
+/* Channel spacing = 199.951172 */
+/* Data rate = 0.0499785 */
+/* RX filter BW = 58.035714 */
+/* PA ramping = false */
+/* Preamble count = 4 */
+/* Whitening = false */
+/* Address config = No address check */
+/* Carrier frequency = 910.000000 */
+/* Device address = 0 */
+/* TX power = 10 */
+/* Manchester enable = false */
+/* CRC enable = true */
+/* Deviation = 5.157471 */
+/* Packet length mode = Variable packet length mode. Packet length configured by the first byte after sync word */
+/* Packet length = 255 */
+/* Modulation format = 2-FSK */
+/* Base frequency = 910.000000 */
+/* Modulated = true */
+/* Channel number = 0 */
+/* RF settings SoC: CC1110 */
+SYNC1     = 0xD3; // sync word, high byte 
+SYNC0     = 0x91; // sync word, low byte 
+PKTLEN    = 0xFF; // packet length 
+PKTCTRL1  = 0x04; // packet automation control 
+PKTCTRL0  = 0x05; // packet automation control 
+ADDR      = 0x00; // device address 
+CHANNR    = 0x00; // channel number 
+FSCTRL1   = 0x06; // frequency synthesizer control 
+FSCTRL0   = 0x00; // frequency synthesizer control 
+FREQ2     = 0x23; // frequency control word, high byte 
+FREQ1     = 0x00; // frequency control word, middle byte 
+FREQ0     = 0x00; // frequency control word, low byte 
+MDMCFG4   = 0xF1; // modem configuration 
+MDMCFG3   = 0x02; // modem configuration 
+MDMCFG2   = 0x03; // modem configuration 
+MDMCFG1   = 0x22; // modem configuration 
+MDMCFG0   = 0xF8; // modem configuration 
+DEVIATN   = 0x15; // modem deviation setting 
+MCSM2     = 0x07; // main radio control state machine configuration 
+MCSM1     = 0x30; // main radio control state machine configuration 
+MCSM0     = 0x18; // main radio control state machine configuration 
+FOCCFG    = 0x17; // frequency offset compensation configuration 
+BSCFG     = 0x6C; // bit synchronization configuration 
+AGCCTRL2  = 0x03; // agc control 
+AGCCTRL1  = 0x40; // agc control 
+AGCCTRL0  = 0x91; // agc control 
+FREND1    = 0x56; // front end rx configuration 
+FREND0    = 0x10; // front end tx configuration 
+FSCAL3    = 0xE9; // frequency synthesizer calibration 
+FSCAL2    = 0x2A; // frequency synthesizer calibration 
+FSCAL1    = 0x00; // frequency synthesizer calibration 
+FSCAL0    = 0x1F; // frequency synthesizer calibration 
+TEST2     = 0x88; // various test settings 
+TEST1     = 0x31; // various test settings 
+TEST0     = 0x09; // various test settings 
+PA_TABLE7 = 0x00; // pa power setting 7 
+PA_TABLE6 = 0x00; // pa power setting 6 
+PA_TABLE5 = 0x00; // pa power setting 5 
+PA_TABLE4 = 0x00; // pa power setting 4 
+PA_TABLE3 = 0x00; // pa power setting 3 
+PA_TABLE2 = 0x00; // pa power setting 2 
+PA_TABLE1 = 0x00; // pa power setting 1 
+PA_TABLE0 = 0xC0; // pa power setting 0 
+
+
+}
+
 void radio_init(void) {
 /* RF settings SoC
   Base frequency = 891
@@ -109,7 +178,7 @@ void radio_init(void) {
  TX power = 10 
 
  */
-
+/*
 ADDR      =     0x00;       // Device Address 
 MCSM2     =     0x07;       // Main Radio Control State Machine Configuration 
 MCSM1     =     0x30;       // Main Radio Control State Machine Configuration 
@@ -157,6 +226,43 @@ IOCFG2    =     0x00;       // Radio Test Signal Configuration (P1_7)
 IOCFG1    =     0x00;       // Radio Test Signal Configuration (P1_6) 
 IOCFG0    =     0x00;       // Radio Test Signal Configuration (P1_5) 
 
+
+
+
+
+//partial stuff from rf studio
+SYNC1     = 0xD3; // sync word, high byte 
+SYNC0     = 0x91; // sync word, low byte 
+PKTLEN    = 0xFF; // packet length 
+PKTCTRL1  = 0x04; // packet automation control 
+PKTCTRL0  = 0x05; // packet automation control 
+ADDR      = 0x00; // device address 
+CHANNR    = 0x00; // channel number 
+FSCTRL1   = 0x06; // frequency synthesizer control 
+FSCTRL0   = 0x00; // frequency synthesizer control 
+FREQ2     = 0x23; // frequency control word, high byte 
+FREQ1     = 0x00; // frequency control word, middle byte 
+
+*/
+// good til here
+//FREQ0     = 0x00; // frequency control word, low byte 
+
+  radio_regs();
+
+  FREQ2     =     0x22;       // Frequency Control Word, High Byte 
+  FREQ1     =     0x44;       // Frequency Control Word, Middle Byte 
+  FREQ0     =     0xEC;       // Frequency Control Word, Low Byte 
+
+
+  // sloooow data rate
+  MDMCFG4 = 0xF1;
+  MDMCFG3 = 0x02;
+
+  
+
+  IOCFG2    =     0x00;       // Radio Test Signal Configuration (P1_7) 
+  IOCFG1    =     0x00;       // Radio Test Signal Configuration (P1_6) 
+  IOCFG0    =     0x00;       // Radio Test Signal Configuration (P1_5) 
 
   PKTCTRL0 |= 1<<0;     // variable length
   PKTCTRL1 |= 1<<2;     // append_status

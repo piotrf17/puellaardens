@@ -1,7 +1,7 @@
 # Puella Ardens
 # GirlTech Burning Man Communicator
 
-libs = clock.rel compose_view.rel display.rel inbox_view.rel keys.rel pm.rel radio.rel compose_view.rel
+libs = clock.rel compose_view.rel display.rel inbox_view.rel keys.rel pm.rel radio.rel compose_view.rel music.rel
 CC = sdcc
 CFLAGS = --no-pack-iram
 LFLAGS = --xram-loc 0xF000
@@ -20,4 +20,4 @@ install: puellaardens.hex
 verify: puellaardens.hex
 	cc-tool -v puellaardens.hex
 clean:
-	rm -f *.hex *.ihx *.rel *.asm *.lst *.rst *.sym *.lnk *.map *.mem
+	rm -f *.ihx *.rel *.asm *.lst *.rst *.sym *.lnk *.map *.mem

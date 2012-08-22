@@ -77,6 +77,9 @@ static void compose_new_message() {
 }
 
 static void send_message() {
+
+//  while(1) {
+
   SSN = LOW;
   setDisplayStart(0);
   setCursor(6, 0);
@@ -88,7 +91,7 @@ static void send_message() {
   SSN = HIGH;
   
   while (radio_still_sending()) {
-    clock_delayms(200);
+    clock_delayms(400);
     SSN = LOW;
     putchar('=');
     SSN = HIGH;
@@ -100,6 +103,8 @@ static void send_message() {
   putchar('D');
   SSN = HIGH;
   clock_delayms(500);
+
+//  }
 
   /* Reset the compose view. */
   state_ = COMPOSE_STATE_WRITING;

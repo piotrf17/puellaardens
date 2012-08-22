@@ -21,9 +21,12 @@
 #include "puellaardens.h"
 #include "pm.h"
 #include "radio.h"
+#include "music.h"
+
 
 /* File global variables. */
 static uint8_t state;
+static uint8_t beeps;
 static bit sleepy;
 static __xdata uint8_t buf[RADIO_PAYLOAD_MAX];
 
@@ -40,6 +43,8 @@ void poll_keyboard() {
   if (key == 0) {
     return;
   }
+  
+  beeps=0;
 
   if (state == STATE_VIEW) {
     switch (key) {
@@ -142,7 +147,6 @@ void main(void) {
   bit bounce_radio = 0;
   uint8_t wait_col = 55;
   uint8_t num_rcvd;
-  
 reset:
   sleepy = 0;
   state = STATE_VIEW;
@@ -207,16 +211,28 @@ reset:
   
   }
 
-
+  beeps = 0;
   radio_listen();
   while (1) {
     poll_keyboard();
+
+    if (beeps) {
+      beep();
+      clock_delayms(300);
+      beeps--;
+    }
     
     // Quick and dirty receive ability
     if (radio_receive_poll(buf)) {
       clear();
       print_message("Incoming transmission!",0,0);
+      beeps = 100;
       print_message(buf,2,0);
+      SSN = LOW;
+      setCursor(3, 0);
+      printf("RSSI: %d, LQI: %02X", radio_last_rssi, radio_last_lqi); 
+      SSN = HIGH;
+      inbox_push_message(buf);
       radio_listen();
     }
 

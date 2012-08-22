@@ -18,3 +18,5 @@ void inbox_draw();
 
 /* Handle any inbox specific keys. */
 void inbox_handle_keypress(uint8_t key);
+
+void inbox_push_message(char *message);

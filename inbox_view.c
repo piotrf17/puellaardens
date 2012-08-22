@@ -109,11 +109,23 @@ void move_to_prev_message() {
   }
 }
 
+void inbox_push_message(char *message) {
+  if (((last_msg_ + 1) % NUM_MESSAGES) == first_msg_) {
+    // inbox is full, drop the oldest
+    first_msg_++;
+    first_msg_ %= NUM_MESSAGES;
+  }
+  last_msg_++;
+  last_msg_ %= NUM_MESSAGES;
+  strcpy(msg_buffer_[last_msg_].text, message);
+  msg_buffer_[last_msg_].attr = MSG_ATTR_NEW;
+}
+
 void inbox_init_test_messages() {
 #define ADD_TEST_MSG(_i, _msg, _attr)     \
   strcpy(msg_buffer_[_i].text, _msg); \
   msg_buffer_[_i].attr = _attr;
-
+/*
   ADD_TEST_MSG(16, "MATT IS A DORK.  ALSO HE SMELLS FUNNY.", 0);
   ADD_TEST_MSG(17, "DINNER SERVING IN 30 MINUTES, SLOP FOR ALL.", 0);
   ADD_TEST_MSG(18, "MASSIVE WHITEOUT COMING, TAKE COVER!", MSG_ATTR_NEW | MSG_ATTR_MINE | MSG_ATTR_SENT);
@@ -124,12 +136,15 @@ void inbox_init_test_messages() {
   ADD_TEST_MSG(1, "ANYONE WANT TO TIME TRAVEL?  LEAVING 5 MINUTES AGO", MSG_ATTR_NEW);
   ADD_TEST_MSG(2, "TOILETS ARE ALL FULL #POOPTROUBLES", MSG_ATTR_NEW);
   ADD_TEST_MSG(3, "HENRY HAS A STINKY BUTT", MSG_ATTR_NEW);
-  
+*/
+
+  ADD_TEST_MSG(0, "Inbox: Test message", MSG_ATTR_NEW);
 #undef ADD_TEST_MSG
-  
+  /*
   cur_msg_ = 18;
   first_msg_ = 16;
   last_msg_ = 3;
+  */
 }
 
 /* Public API. */
