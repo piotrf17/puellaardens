@@ -2,79 +2,82 @@
 #include <string.h>
 #include "radio.h"
 
-static unsigned char __xdata rf_packet[PAYLOAD_BYTES+2];
-static unsigned char rf_packet_ix=0;
-static unsigned char rf_packet_n=0;
+static uint8_t __xdata rf_packet[RADIO_PAYLOAD_MAX+3];
+static uint8_t rf_packet_ix = 0;
+static uint8_t rf_packet_n = 0;
 
-static char rf_mode_tx=0;
+int8_t radio_last_rssi;
+uint8_t radio_last_lqi;
 
-static __xdata struct cc_dma_channel dma0 = {0xF0,0x00,
-                                       0xDF, 0xD9,//(unsigned int)&RFD & 0x00FF  , 
-                                       0, PAYLOAD_BYTES,
-                                       DMA_CFG0_WORDSIZE_8 | DMA_CFG0_TMODE_SINGLE | DMA_CFG0_TRIGGER_RADIO,
-                                       DMA_CFG1_SRCINC_1 | DMA_CFG1_DESTINC_0  | DMA_CFG1_PRIORITY_NORMAL};
+static char rf_mode_tx = 0; // controls whether the rftxrx ISR is transmitting or receiving
 
 void rftxrx_ISR(void)  __interrupt (0) __using (1) {
-//    RFTXRXIE=0;    //Packet is complete, so disable the interrupt.
-  if (rf_packet_ix < rf_packet_n)      //If packet is not complete,
-    if (rf_mode_tx)
-      RFD = rf_packet[rf_packet_ix++];  // (TX) send data to radio peripheral
-    else {
-      rf_packet[rf_packet_ix++] = RFD;  // (RX) write received byte to buffer
-      if (rf_packet_ix == 1)      // variable length packets
-        rf_packet_n = rf_packet[0];
-    }
-  else
-    RFTXRXIE=0;    //Packet is complete, so disable the interrupt.
+  
+  if (rf_mode_tx)
+    RFD = rf_packet[rf_packet_ix++];  // (TX) send data to radio peripheral
+  else {
+    rf_packet[rf_packet_ix++] = RFD;  // (RX) write received byte to buffer
+    if (rf_packet_ix == 1)      // Variable length packets.  The first byte received specifies the payload length.
+      rf_packet_n = rf_packet[0] + 3; // 1st byte = payload length.  Then the payload, then RSSI and CRC_LQI.
+  }
+
+  if (rf_packet_ix == rf_packet_n) 
+    RFTXRXIE = 0;    //Packet is complete, so disable the interrupt.
 }
 
-
-char radio_still_sending(){ //Poll whether the radio is still transmitting
+// 12 corn muffin 0 rssi lqi 
+// 0             12  13  14
+//
+char radio_still_sending() { // Poll whether the radio is still transmitting
 //  return RFTXRXIE;
   //    return (rf_packet_ix < rf_packet_n);
   return !(RFIF & RFIF_IM_DONE);
 }
 
-uint8_t radio_recv_packet_block(void *packet) {  //go into receive mode, wait for a complete packet, write it to *packet
+void radio_listen() { // Go into "listen mode"
+//    RFST = RFST_SIDLE;
   
-    RFST = RFST_SIDLE;
-    
-//    DMAARM &= ~DMAARM_DMAARM0;
+    rf_packet_n   = -1;    // rf_packet_n will be updated in the interrupt after the first byte is received (specifying the payload length)
+    rf_packet_ix  = 0;
+    rf_mode_tx    = 0;
     
     RFST = RFST_SRX;  
-    rf_packet_n=PAYLOAD_BYTES+2;     //PAYLOAD_BYTES payload bytes, then RSSI, then CRC+LQI  (actually this will be changed in the rx interrupt)
-    rf_packet_ix=0;
-    rf_mode_tx = 0;
-    
-    
-    RFTXRXIE=1;
+    RFTXRXIE = 1;
     
     RFIF &= ~RFIF_IM_DONE;
-//    while (!(RFIF & RFIF_IM_DONE));
-    while (RFTXRXIE);
-    rf_packet_n = rf_packet[0];
-    memcpy(packet,rf_packet+1,rf_packet_n);
+}
 
-    // todo: RSSI
-    //
-    return rf_packet_n;
+uint8_t radio_receive_poll (uint8_t *packet) { // Did we receive a complete message?
+  if (RFTXRXIE)
+    return 0;   // Nope (either we haven't even started receiving, or it's partially complete)
+  else {
+    memcpy(packet, &rf_packet[1], rf_packet_n - 3); // don't include the first byte (length byte)
+    radio_last_rssi = rf_packet[rf_packet_n - 2];   // RSSI and LQI are appended to the packet
+    radio_last_lqi  = rf_packet[rf_packet_n - 1];
+    return rf_packet_n - 3;
+  }
+}
+
+uint8_t radio_recv_packet_block(void *packet) {  //go into receive mode, wait for a complete packet, write it to *packet
+  
+    uint8_t n;
+
+    radio_listen();
+
+    while (!(n = radio_receive_poll(packet)));
+  
+    return n;
 }
 
 void radio_send_packet(const void *packet) { //send the packet over RF
-      rf_packet_n = strlen(packet);
+      rf_packet[0] = strlen(packet) + 1;  // payload length ( + 1 byte to include the null termination)
+      memcpy(&rf_packet[1], packet, rf_packet[0]);
 
-      rf_packet[0]=rf_packet_n;
-      memcpy(&rf_packet[1],packet,rf_packet_n);
+      rf_packet_n = rf_packet[0] + 1;  // include the length byte in the total number of bytes to send
       
       rf_mode_tx = 1;
       RFTXRXIE=1;
 
-/*
-      dma0.src_high = (unsigned int)rf_packet>>8;
-      dma0.src_low = (unsigned char)rf_packet;
-      dma0.len_low = rf_packet_n+1;
-      DMAARM |= DMAARM_DMAARM0;
-*/
       RFST = RFST_STX;
       
       RFIF &= ~RFIF_IM_DONE;      
@@ -116,7 +119,7 @@ AGCCTRL1  =     0x40;       // AGC Control
 AGCCTRL0  =     0x91;       // AGC Control 
 SYNC1     =     0xD3;       // Sync Word, High Byte 
 SYNC0     =     0x91;       // Sync Word, Low Byte 
-PKTLEN    =     PAYLOAD_BYTES;       // Packet Length 
+PKTLEN    =     RADIO_PAYLOAD_MAX;       // Packet Length 
 PKTCTRL1  =     0x04;       // Packet Automation Control 
 PKTCTRL0  =     0x04;       // Packet Automation Control 
 TEST2     =     0x81;       // Various Test Settings 
@@ -154,16 +157,10 @@ IOCFG0    =     0x00;       // Radio Test Signal Configuration (P1_5)
 
 
   PKTCTRL0 |= 1<<0;     // variable length
+  PKTCTRL1 |= 1<<2;     // append_status
 
   RFST = RFST_SIDLE;
   
   EA = 1;   // global interrupt enable
-/*
-  DMA0CFGH = (unsigned int)&dma0 >> 8;
-  DMA0CFGL = (unsigned int)&dma0;
-*/
-                                    
-
-  //
 
 }

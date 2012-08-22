@@ -70,7 +70,7 @@ void print_message(const char* msg, int row, int col) {
 }
 
 void main(void) {
-  char buf[22];
+  unsigned char buf[22];
   bit test_radio = 1;
   uint8_t wait_col = 55;
   uint8_t num_rcvd;
@@ -114,7 +114,7 @@ reset:
     setDisplayStart(0);
     SSN = LOW;
     setCursor(3, 0);
-    printf("%d bytes recvd", num_rcvd);
+    printf("%d bytes RSSI=%d LQI=%02X", num_rcvd, radio_last_rssi, radio_last_lqi);
     SSN = HIGH;
   }
 
