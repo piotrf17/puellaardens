@@ -6,16 +6,24 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "clock.h"
 #include "compose_view.h"
 #include "display.h"
 #include "keys.h"
 #include "message.h"
+#include "puellaardens.h"
+
+/* Possible states the compose view can be in. */
+#define COMPOSE_STATE_WRITING 0  /* writing a message */
+#define COMPOSE_STATE_CONFIRM 1  /* confirm send */
+#define COMPOSE_STATE_SENDING 2  /* animated progress bar */
 
 /* File global variables. */
 static __xdata char compose_buffer_[MSG_TEXT_SIZE];
 static int8_t cursor_pos_;
 static int8_t msg_len_;
-static bit alt_on;
+static bit alt_on_;
+static int8_t state_;
 
 /* Internal functions. */
 
@@ -34,7 +42,7 @@ static void cursor_right() {
 static void add_char(char c) {
   int8_t i;
 
-  if (alt_on) {
+  if (alt_on_) {
     c = keys_altkey(c);
   }
   
@@ -66,11 +74,46 @@ static void compose_new_message() {
   compose_buffer_[0] = '\0';
 }
 
+static void send_message() {
+  int8_t i;
+  
+  /* Fake a send, later make this actually transmit. */
+  SSN = LOW;
+  setDisplayStart(0);
+  setCursor(6, 0);
+  printf("Transmitting!");
+
+  setCursor(7, 0);
+  putchar('8');
+  SSN = HIGH;
+  
+  for (i = 0; i < 5; ++i) {
+    clock_delayms(500);
+    SSN = LOW;
+    putchar('=');
+    SSN = HIGH;
+  }
+
+  clock_delayms(500);
+  SSN = LOW;
+  putchar('D');
+  SSN = HIGH;
+  clock_delayms(500);
+
+  /* Reset the compose view. */
+  state_ = COMPOSE_STATE_WRITING;
+  compose_new_message();
+
+  /* Switch back to the inbox view. */
+  switch_state(STATE_VIEW);
+}
+
 /* Public API. */
 
 void compose_init() {
   compose_new_message();
-  alt_on = 0;
+  alt_on_ = 0;
+  state_ = COMPOSE_STATE_WRITING;
 }
 
 void compose_draw() {
@@ -90,7 +133,7 @@ void compose_draw() {
     for (col = 0; col < CHAR_WIDTH && msg_pos < msg_len + 1; ++col, ++msg_pos) {
       if (msg_pos == msg_len) {
         if (msg_pos == cursor_pos_) {
-          if (alt_on) {
+          if (alt_on_) {
             putchar_mask('^', 0x80);
           } else {
             putchar_mask(' ', 0x80);
@@ -107,7 +150,12 @@ void compose_draw() {
     row += 1;
   }
 
-  if (alt_on) {
+  if (state_ == COMPOSE_STATE_CONFIRM) {
+    setCursor(5, 0);
+    printf("Really send? (Y/N)");
+  }
+  
+  if (alt_on_) {
     setCursor(7, 0);
     printf("alt keys on");
   }
@@ -116,39 +164,56 @@ void compose_draw() {
 }
 
 void compose_handle_keypress(uint8_t key) {
-  switch (key) {
-    case KBACK:
-      del_char();
-      compose_draw();
-      break;
-    case '<':
-      cursor_left();
-      compose_draw();
-      break;
-    case '>':
-      cursor_right();
-      compose_draw();
-      break;
-    case ' ':
-    case ',':
-      add_char(key);
-      compose_draw();
-      break;
-    case KALT:
-      alt_on = !alt_on;
-      compose_draw();
-      break;
-    case KSPK:
-      if (alt_on) {
-        add_char('0');
+  if (state_ == COMPOSE_STATE_WRITING) {
+    switch (key) {
+      case KBACK:
+        del_char();
         compose_draw();
-      }
-      break;
-    default:
-      if (key >= 'A' && key <= 'Z') {
+        break;
+      case '<':
+        cursor_left();
+        compose_draw();
+        break;
+      case '>':
+        cursor_right();
+        compose_draw();
+        break;
+      case ' ':
+      case ',':
         add_char(key);
         compose_draw();
-      }
-      break;
+        break;
+      case KALT:
+        alt_on_ = !alt_on_;
+        compose_draw();
+        break;
+      case KSPK:
+        if (alt_on_) {
+          add_char('0');
+          compose_draw();
+        }
+        break;
+      case '\n':
+        state_ = COMPOSE_STATE_CONFIRM;
+        compose_draw();
+      default:
+        if (key >= 'A' && key <= 'Z') {
+          add_char(key);
+          compose_draw();
+        }
+        break;
+    }
+  } else if (state_ == COMPOSE_STATE_CONFIRM) {
+    switch (key) {
+      case 'Y':
+        state_ = COMPOSE_STATE_SENDING;
+        compose_draw();
+        send_message();
+        break;
+      case 'N':
+        state_ = COMPOSE_STATE_WRITING;
+        compose_draw();
+        break;
+    }
   }
 }

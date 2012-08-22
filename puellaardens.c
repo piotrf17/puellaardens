@@ -26,6 +26,14 @@
 static uint8_t state;
 static bit sleepy;
 
+void switch_state(int8_t new_state) {
+  state = new_state;
+  switch (state) {
+    case STATE_VIEW: inbox_draw(); break;
+    case STATE_COMPOSE: compose_draw(); break;
+  }
+}
+
 void poll_keyboard() {
   uint8_t key = keys_get();
   if (key == 0) {

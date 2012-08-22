@@ -177,6 +177,8 @@ uint8_t keys_altkey(uint8_t c) {
     return '?';
   } else if (c >= 'A' && c <= 'Z') {
     return altkeys[c - 'A'];
+  } else if (c == KSPK) {
+    return '0';
   } else {
     return c;
   }
