@@ -23,26 +23,14 @@
  */
 
 #include <cc1110.h>
-#include "ioCCxx10_bitdef.h"
-#include "display.h"
-#include "bits.h"
-#include "types.h"
+#include <stdint.h>
+
 #include "5x7.h"
-
-void sleepMillis(int ms) {
-  int j;
-  while (--ms > 0) { 
-    for (j=0; j<1200;j++); // about 1 millisecond
-  };
-}
-
-void xtalClock() { // Set system clock source to 26 Mhz
-  SLEEP &= ~SLEEP_OSC_PD; // Turn both high speed oscillators on
-  while( !(SLEEP & SLEEP_XOSC_S) ); // Wait until xtal oscillator is stable
-  CLKCON = (CLKCON & ~(CLKCON_CLKSPD | CLKCON_OSC)) | CLKSPD_DIV_1; // Select xtal osc, 26 MHz
-  while (CLKCON & CLKCON_OSC); // Wait for change to take effect
-  SLEEP |= SLEEP_OSC_PD; // Turn off the other high speed oscillator (the RC osc)
-}
+#include "bits.h"
+#include "clock.h"
+#include "display.h"
+#include "ioCCxx10_bitdef.h"
+#include "types.h"
 
 void setIOPorts() {
   //No need to set PERCFG or P2DIR as default values on reset are fine
@@ -80,7 +68,7 @@ void txCtl(unsigned char ch){
 
 void LCDReset(void) {
   LCDRst = LOW; // hold down the RESET line to reset the display
-  sleepMillis(1);
+  clock_delayms(1);
   LCDRst = HIGH;
   SSN = LOW;
   // send the initialisation commands to the LCD display

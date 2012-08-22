@@ -18,14 +18,16 @@
  */
 
 #include <cc1110.h>
-#include "keys.h"
-#include "types.h"
-#include "bits.h"
+#include <stdint.h>
 
-static u8 active_key;
+#include "bits.h"
+#include "clock.h"
+#include "keys.h"
+
+static uint8_t active_key;
 
 //8 rows, 10 columns
-const u8 keychars[]={
+static const uint8_t keychars[]={
   //gnd 0_1   1_2   1_3   1_4   1_5   1_6   1_7   0_6   0_7
 
   //row 0, gnd
@@ -48,14 +50,17 @@ const u8 keychars[]={
 
 #define KEY(row,col) keychars[row*10+col]
 
-u8 realkeyscan(){
-  u8 row, col;
+uint8_t realkeyscan(){
+  uint8_t row, col;
   
   //All input
   P0DIR &= ~(BIT1+BIT6+BIT7);
   P1DIR &= ~(BIT2+BIT3+BIT4+BIT5+BIT6+BIT7);
   P0 |= BIT1+BIT6+BIT7;
   P1 |= BIT2+BIT3+BIT4+BIT5+BIT6+BIT7;
+
+  /* Wait a bit, hopefully removes spurious keypresses. */
+  clock_delayms(1);
   
   for(row=0;row<8;row++){
     col=row;//nothing
@@ -109,9 +114,10 @@ u8 realkeyscan(){
   return '\0';
 }
 
-//! Returns the debounced character press.
-u8 keyscan(){
-  u8 key=realkeyscan();
+/* Public API */
+
+uint8_t keys_scan() {
+  uint8_t key=realkeyscan();
   //debounce
   while(key!=realkeyscan())
     key=realkeyscan();
@@ -125,9 +131,8 @@ u8 keyscan(){
   return key;
 }
 
-/* non-blocking check for a keypress */
-u8 getkey() {
-  u8 key = keyscan();
+uint8_t keys_get() {
+  uint8_t key = keys_scan();
 
   /* keep track of key currently pressed to avoid rapid repeating */
   if (key != active_key)

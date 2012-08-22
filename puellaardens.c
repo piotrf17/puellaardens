@@ -11,6 +11,7 @@
 #include <string.h>
 
 #include "5x7.h"
+#include "clock.h"
 #include "compose_view.h"
 #include "display.h"
 #include "inbox_view.h"
@@ -26,7 +27,7 @@ static uint8_t state;
 static bit sleepy;
 
 void poll_keyboard() {
-  uint8_t key = getkey();
+  uint8_t key = keys_get();
   if (key == 0) {
     return;
   }
@@ -79,14 +80,13 @@ reset:
   sleepy = 0;
   state = STATE_VIEW;
 
-  compose_new_message();
-
   /* Setup display. */
-  xtalClock();
+  clock_init();
   setIOPorts();
   configureSPI();
   LCDReset();
 
+  compose_new_message();
   inbox_init_test_messages();
   inbox_draw();
 
@@ -100,7 +100,7 @@ reset:
 
     radio_send_packet("CORN MUFFIN");
     while (radio_still_sending()) {          
-      sleepMillis(1000);
+      clock_delayms(1000);
       print_message(".", 0, wait_col);
       wait_col += 5;
     }
@@ -124,7 +124,7 @@ reset:
     /* go to sleep (more or less a shutdown) if power button pressed */
     if (sleepy) {
       clear();
-      sleepMillis(1000);
+      clock_delayms(1000);
       SSN = LOW;
       LCDPowerSave();
       SSN = HIGH;

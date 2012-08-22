@@ -1,5 +1,5 @@
 /*
- * IM-Me display functions
+ * Puella Ardens - Burning Man GirlTech based IM communicator.
  *
  * Copyright 2010 Dave
  * http://daveshacks.blogspot.com/2010/01/im-me-lcd-interface-hacked.html
@@ -22,50 +22,29 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#include <stdint.h>
+#include <cc1110.h>
 
-#define LOW 0
-#define HIGH 1
+#include "clock.h"
+#include "ioCCxx10_bitdef.h"
 
-/* Width and height of the screen in pixels. */
-#define WIDTH  132
-#define HEIGHT 65
+void clock_init() {
+  /* Turn both high speed oscillators on. */
+  SLEEP &= ~SLEEP_OSC_PD;
 
-/* Width and height of the screen in printable characters. */
-#define CHAR_WIDTH 26
-#define CHAR_HEIGHT 8
+  /* Wait until xtal oscillator is stable. */
+  while( !(SLEEP & SLEEP_XOSC_S) );
 
-// IO Port Definitions:
-#define A0 P0_2
-#define SSN P0_4
-#define LCDRst P1_1
-#define LED_RED  P2_3
-#define LED_GREEN P2_4
-// plus SPI ports driven from USART0 are:
-// MOSI P0_3
-// SCK P0_5
+  /* Select xtal osc, 26 MHz */
+  CLKCON = (CLKCON & ~(CLKCON_CLKSPD | CLKCON_OSC)) | CLKSPD_DIV_1;
+  while (CLKCON & CLKCON_OSC);
 
-void setIOPorts();
+  /* Turn off the RC oscillator */
+  SLEEP |= SLEEP_OSC_PD;
+}
 
-void configureSPI();
-
-void tx(unsigned char ch);
-
-void txData(unsigned char ch);
-
-void txCtl(unsigned char ch);
-
-void LCDReset(void);
-
-void LCDPowerSave();
-
-void setCursor(unsigned char row, unsigned char col);
-
-void setDisplayStart(unsigned char start);
-
-void setNormalReverse(unsigned char normal);
-
-void clear();
-
-void putchar(char c);
-void putchar_mask(char c, uint8_t mask);
+void clock_delayms(int ms) {
+  int j;
+  while (--ms > 0) { 
+    for (j=0; j<1200;j++); // about 1 millisecond
+  };
+}
