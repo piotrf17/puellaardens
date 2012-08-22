@@ -7,8 +7,8 @@
 
 #include <stdint.h>
 
-/* Setup the view for writing a new message. */
-void compose_new_message();
+/* Initialize the compose view. */
+void compose_init();
 
 /* Draw the UI for composing a message. */
 void compose_draw();

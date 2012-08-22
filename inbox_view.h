@@ -10,9 +10,8 @@
 /* Max number of old messages to store. */
 #define NUM_MESSAGES 22
 
-/* For testing purposes. */
-/* TODO: remove this function. */
-void inbox_init_test_messages();
+/* Initialize the inbox view. */
+void inbox_init();
 
 /* Draw the UI for viewing the inbox. */
 void inbox_draw();

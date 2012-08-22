@@ -17,12 +17,12 @@
  * Boston, MA 02110-1301, USA.
  */
 
-#include "types.h"
+#ifndef KEYS_H
+#define KEYS_H
 
-u8 keyscan();
-u8 getkey();
+#include <stdint.h>
 
-//Special keys.
+/* Special keys. */
 #define KPWR 0x01
 #define KMNU 0x03
 #define KCAP 0x82
@@ -32,3 +32,14 @@ u8 getkey();
 #define KBACK 0x86
 #define KDWN 0x87
 #define KBYE 0x02
+
+/* Nonblocking, returns the debounced key press, if any. */
+uint8_t keys_scan();
+
+/* Nonblocking, returns the debounced key press and avoids rapid repeating. */
+uint8_t keys_get();
+
+/* Return alternative key for the given key. */
+uint8_t keys_altkey(uint8_t c);
+
+#endif
