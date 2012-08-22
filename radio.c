@@ -21,7 +21,7 @@ void rftxrx_ISR(void)  __interrupt (0) __using (1) {
       RFD = rf_packet[rf_packet_ix++];  // (TX) send data to radio peripheral
     else {
       rf_packet[rf_packet_ix++] = RFD;  // (RX) write received byte to buffer
-      if (rf_packet_ix == 0)      // variable length packets
+      if (rf_packet_ix == 1)      // variable length packets
         rf_packet_n = rf_packet[0];
     }
   else
@@ -39,7 +39,7 @@ uint8_t radio_recv_packet_block(void *packet) {  //go into receive mode, wait fo
   
     RFST = RFST_SIDLE;
     
-    DMAARM &= ~DMAARM_DMAARM0;
+//    DMAARM &= ~DMAARM_DMAARM0;
     
     RFST = RFST_SRX;  
     rf_packet_n=PAYLOAD_BYTES+2;     //PAYLOAD_BYTES payload bytes, then RSSI, then CRC+LQI  (actually this will be changed in the rx interrupt)
@@ -65,15 +65,19 @@ void radio_send_packet(const void *packet) { //send the packet over RF
 
       rf_packet[0]=rf_packet_n;
       memcpy(&rf_packet[1],packet,rf_packet_n);
+      
+      rf_mode_tx = 1;
+      RFTXRXIE=1;
+
+/*
       dma0.src_high = (unsigned int)rf_packet>>8;
       dma0.src_low = (unsigned char)rf_packet;
       dma0.len_low = rf_packet_n+1;
       DMAARM |= DMAARM_DMAARM0;
-
+*/
       RFST = RFST_STX;
       
       RFIF &= ~RFIF_IM_DONE;      
-     // RFTXRXIE=1;
 }
 
 void radio_init(void) {
@@ -153,11 +157,11 @@ IOCFG0    =     0x00;       // Radio Test Signal Configuration (P1_5)
 
   RFST = RFST_SIDLE;
   
- 
-
+  EA = 1;   // global interrupt enable
+/*
   DMA0CFGH = (unsigned int)&dma0 >> 8;
   DMA0CFGL = (unsigned int)&dma0;
-  
+*/
                                     
 
   //

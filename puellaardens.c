@@ -71,7 +71,7 @@ void print_message(const char* msg, int row, int col) {
 
 void main(void) {
   char buf[22];
-  bit test_radio = 0;
+  bit test_radio = 1;
   uint8_t wait_col = 55;
   uint8_t num_rcvd;
   
@@ -100,7 +100,7 @@ reset:
 
     radio_send_packet("CORN MUFFIN");
     while (radio_still_sending()) {          
-      sleepMillis(1000);
+      sleepMillis(10);
       print_message(".", 0, wait_col);
       wait_col += 5;
     }
