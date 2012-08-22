@@ -164,10 +164,12 @@ void inbox_handle_keypress(uint8_t key) {
       move_to_prev_message();
       inbox_draw();
       break;
+
     case KDWN:
     case '>':
       move_to_next_message();
       inbox_draw();
       break;
+
   }
 }

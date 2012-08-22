@@ -25,6 +25,7 @@
 /* File global variables. */
 static uint8_t state;
 static bit sleepy;
+static __xdata uint8_t buf[RADIO_PAYLOAD_MAX];
 
 void switch_state(int8_t new_state) {
   state = new_state;
@@ -78,9 +79,61 @@ void print_message(const char* msg, int row, int col) {
   SSN = HIGH;
 }
 
+
+/* Repeater mode, for use with a standalone dev board */
+void repeater_mode() {
+  CLKCON = (1<<7) | (0<<6) | (0<<3) | (0<<0); //26MHz crystal oscillator for cpu and timer
+  while (CLKCON & CLKCON_OSC);  //wait for clock stability
+  
+  P1DIR=0x03;   //LEDs on P1.1 and P1.0
+
+#define LEDR P1_1
+#define LEDG P1_0
+  radio_init();
+//    clear();
+  while (1) {
+    LEDR = 1; LEDG = 0;
+  //  print_message(" ",2,0);
+  //  print_message(" ",3,0);
+  //  print_message("* Listening...        ",0,0);
+    radio_listen();
+    while (!radio_receive_poll(buf)) {
+      clock_delayms(100);
+      LEDG ^= 1;
+  //    SSN = LOW;
+  //    setCursor(0, 15*5);
+  //    printf("%d %d %d", rf_packet_ix, rf_packet_n, rf_packet[0]); 
+  //    SSN = HIGH;
+    }
+    buf[21]='\0';
+ //   print_message("                                       ",1,0);
+ //   print_message(buf, 1, 0);
+
+    LEDR = 0; LEDG = 1;
+
+    RFST = RFST_SIDLE;
+    clock_delayms(100);
+
+ //   print_message("* Sending...",2,0);
+
+    radio_send_packet(buf);
+    while (radio_still_sending()) {          
+      clock_delayms(100);
+ //     SSN = LOW;
+ //     setCursor(2, 15*5);
+ //     printf("%d %d %d", rf_packet_ix, rf_packet_n, rf_packet[0]); 
+ //     SSN = HIGH;
+    }
+ //   print_message("* SENT!", 3, 0);
+    RFST = RFST_SIDLE;
+    clock_delayms(100);
+
+  }
+}
+
 void main(void) {
-  unsigned char buf[22];
-  bit test_radio = 1;
+  bit test_radio = 0;
+  bit bounce_radio = 0;
   uint8_t wait_col = 55;
   uint8_t num_rcvd;
   
@@ -88,11 +141,18 @@ reset:
   sleepy = 0;
   state = STATE_VIEW;
 
+ 
+  
+  if (bounce_radio)
+    repeater_mode();
+  
   /* Initialize system modules. */
+  
   clock_init();
   setIOPorts();
   configureSPI();
   LCDReset();
+  radio_init();
 
   /* Initialize app modules. */
   compose_init();
@@ -101,10 +161,6 @@ reset:
   inbox_draw();
 
   if (test_radio) {
-    /* Setup radio. */
-    EA = 1;       // Enable interrupts.
-    radio_init();
-
     clear();
     print_message("SENDING MSG", 0, 0);
 
@@ -129,10 +185,8 @@ reset:
 
     RFST = RFST_SIDLE;
     clock_delayms(100);
-
-
   
-    print_message("SENDING MSG AGAIN", 4, 0);
+    print_message("SENDING ANOTHER", 4, 0);
 
     radio_send_packet("POOP");
     while (radio_still_sending()) {          
@@ -145,12 +199,20 @@ reset:
 
     print_message("SENT!", 5, 0);
   
-  
-  
   }
 
+
+  radio_listen();
   while (1) {
     poll_keyboard();
+    
+    // Quick and dirty receive ability
+    if (radio_receive_poll(buf)) {
+      clear();
+      print_message("Incoming transmission!",0,0);
+      print_message(buf,2,0);
+      radio_listen();
+    }
 
     /* go to sleep (more or less a shutdown) if power button pressed */
     if (sleepy) {

@@ -93,6 +93,7 @@ static void send_message() {
     putchar('=');
     SSN = HIGH;
   }
+  radio_listen(); // go back into receive mode
 
   clock_delayms(500);
   SSN = LOW;
@@ -103,6 +104,7 @@ static void send_message() {
   /* Reset the compose view. */
   state_ = COMPOSE_STATE_WRITING;
   compose_new_message();
+
 
   /* Switch back to the inbox view. */
   switch_state(STATE_VIEW);
