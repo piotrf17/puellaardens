@@ -2,9 +2,9 @@
 #include <string.h>
 #include "radio.h"
 
-static uint8_t __xdata rf_packet[RADIO_PAYLOAD_MAX+3];
-static uint8_t rf_packet_ix = 0;
-static uint8_t rf_packet_n = 0;
+uint8_t __xdata rf_packet[RADIO_PAYLOAD_MAX+3];
+uint8_t rf_packet_ix = 0;
+uint8_t rf_packet_n = 0;
 
 int8_t radio_last_rssi;
 uint8_t radio_last_lqi;
@@ -74,13 +74,15 @@ void radio_send_packet(const void *packet) { //send the packet over RF
       memcpy(&rf_packet[1], packet, rf_packet[0]);
 
       rf_packet_n = rf_packet[0] + 1;  // include the length byte in the total number of bytes to send
-      
+      rf_packet_ix = 0;
       rf_mode_tx = 1;
-      RFTXRXIE=1;
-
+     
+      RFTXRXIF = 0;
       RFST = RFST_STX;
-      
       RFIF &= ~RFIF_IM_DONE;      
+      
+      RFTXRXIE = 1;
+
 }
 
 void radio_init(void) {

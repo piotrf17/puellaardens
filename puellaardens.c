@@ -126,6 +126,27 @@ reset:
     setCursor(3, 0);
     printf("%d bytes RSSI=%d LQI=%02X", num_rcvd, radio_last_rssi, radio_last_lqi);
     SSN = HIGH;
+
+    RFST = RFST_SIDLE;
+    clock_delayms(100);
+
+
+  
+    print_message("SENDING MSG AGAIN", 4, 0);
+
+    radio_send_packet("POOP");
+    while (radio_still_sending()) {          
+      clock_delayms(100);
+      SSN = LOW;
+      setCursor(5, 0);
+      printf("%d %d %d", rf_packet_ix, rf_packet_n, rf_packet[0]); 
+      SSN = HIGH;
+    }
+
+    print_message("SENT!", 5, 0);
+  
+  
+  
   }
 
   while (1) {

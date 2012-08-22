@@ -12,6 +12,8 @@
 #include "keys.h"
 #include "message.h"
 #include "puellaardens.h"
+#include "radio.h"
+
 
 /* Possible states the compose view can be in. */
 #define COMPOSE_STATE_WRITING 0  /* writing a message */
@@ -75,20 +77,18 @@ static void compose_new_message() {
 }
 
 static void send_message() {
-  int8_t i;
-  
-  /* Fake a send, later make this actually transmit. */
   SSN = LOW;
   setDisplayStart(0);
   setCursor(6, 0);
   printf("Transmitting!");
 
+  radio_send_packet(compose_buffer_);
   setCursor(7, 0);
   putchar('8');
   SSN = HIGH;
   
-  for (i = 0; i < 5; ++i) {
-    clock_delayms(500);
+  while (radio_still_sending()) {
+    clock_delayms(200);
     SSN = LOW;
     putchar('=');
     SSN = HIGH;
