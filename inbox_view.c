@@ -11,6 +11,10 @@
 #include "keys.h"
 #include "message.h"
 
+#define ADD_TEST_MSG(_i, _msg, _attr) \
+  strcpy(msg_buffer_[_i].text, _msg); \
+  msg_buffer_[_i].attr = _attr;
+
 /* File global variables. */
 static __xdata MessageInfo msg_buffer_[NUM_MESSAGES];
 static uint8_t cur_msg_;
@@ -28,12 +32,17 @@ uint8_t draw_message(const MessageInfo* msg, uint8_t row) {
   SSN = LOW;
   setDisplayStart(0);
 
-  /* Render the first row, which is 1 short for indicators. */
-  if (msg_len <= CHAR_WIDTH - 1) {
+  /* Render the first row, which is 2 short for indicators. */
+  if (msg_len <= CHAR_WIDTH - 2) {
     last_row = 1;
   }
   setCursor(row, 0);
-  for (col = 0; col < CHAR_WIDTH - 1 && msg_pos < msg_len; ++col, ++msg_pos) {
+  if (last_row) {
+    putchar_mask('>', 0x80);
+  } else {
+    putchar('>');
+  }
+  for (col = 1; col < CHAR_WIDTH - 1 && msg_pos < msg_len; ++col, ++msg_pos) {
     if (last_row) {
       putchar_mask(msg->text[msg_pos], 0x80);
     } else {
@@ -110,10 +119,6 @@ void move_to_prev_message() {
 }
 
 void inbox_init_test_messages() {
-#define ADD_TEST_MSG(_i, _msg, _attr)     \
-  strcpy(msg_buffer_[_i].text, _msg); \
-  msg_buffer_[_i].attr = _attr;
-/*
   ADD_TEST_MSG(16, "MATT IS A DORK.  ALSO HE SMELLS FUNNY.", 0);
   ADD_TEST_MSG(17, "DINNER SERVING IN 30 MINUTES, SLOP FOR ALL.", 0);
   ADD_TEST_MSG(18, "MASSIVE WHITEOUT COMING, TAKE COVER!", MSG_ATTR_NEW | MSG_ATTR_MINE | MSG_ATTR_SENT);
@@ -124,15 +129,10 @@ void inbox_init_test_messages() {
   ADD_TEST_MSG(1, "ANYONE WANT TO TIME TRAVEL?  LEAVING 5 MINUTES AGO", MSG_ATTR_NEW);
   ADD_TEST_MSG(2, "TOILETS ARE ALL FULL #POOPTROUBLES", MSG_ATTR_NEW);
   ADD_TEST_MSG(3, "HENRY HAS A STINKY BUTT", MSG_ATTR_NEW);
-*/
 
-  ADD_TEST_MSG(0, "Inbox: Test message", MSG_ATTR_NEW);
-#undef ADD_TEST_MSG
-  /*
   cur_msg_ = 18;
   first_msg_ = 16;
   last_msg_ = 3;
-  */
 }
 
 /* Public API. */
@@ -142,9 +142,16 @@ void inbox_init() {
   first_msg_ = 0;
   last_msg_ = 0;
 
+  /* Provide some intro instruction messages. */
+  ADD_TEST_MSG(0, "Welcome to grlltech.", 0);
+  ADD_TEST_MSG(1, "Scroll messages with the wheel on the left.", 0);
+  ADD_TEST_MSG(2, "Hit menu to switch to compose view, and menu again to return.", 0);
+  ADD_TEST_MSG(3, "Press Enter while composing to send your message.", 0);
+  last_msg_ = 3;
+
   /* For testing purposes. */
   /* TODO: remove this function. */
-  inbox_init_test_messages();
+  /*  inbox_init_test_messages();*/
 }
 
 void inbox_draw() {
