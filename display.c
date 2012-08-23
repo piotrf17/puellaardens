@@ -24,6 +24,7 @@
 
 #include <cc1110.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "5x7.h"
 #include "bits.h"
@@ -148,4 +149,13 @@ void putchar_mask(char c, uint8_t mask) {
       txData(font[c - FONT_OFFSET][i] | mask);
     /*    txData(0x00);*/
   }  
+}
+
+/* Convenience function for debugging. */
+void display_print_message(const char* msg, int row, int col) {
+  setDisplayStart(0);
+  SSN = LOW;
+  setCursor(row, col);
+  printf(msg);
+  SSN = HIGH;
 }

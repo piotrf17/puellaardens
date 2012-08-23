@@ -69,3 +69,5 @@ void clear();
 
 void putchar(char c);
 void putchar_mask(char c, uint8_t mask);
+
+void display_print_message(const char* msg, int row, int col);
