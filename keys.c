@@ -89,7 +89,7 @@ uint8_t realkeyscan(){
   P1 |= BIT2+BIT3+BIT4+BIT5+BIT6+BIT7;
 
   /* Wait a bit, hopefully removes spurious keypresses. */
-  clock_delayms(1);
+  clock_delayms(3);
   
   for(row=0;row<8;row++){
     col=row;//nothing
@@ -173,13 +173,35 @@ uint8_t keys_get() {
 }
 
 uint8_t keys_altkey(uint8_t c) {
-  if (c == ',') {
-    return '?';
-  } else if (c >= 'A' && c <= 'Z') {
-    return altkeys[c - 'A'];
-  } else if (c == KSPK) {
-    return '0';
-  } else {
-    return c;
+  switch(c) {
+    case ',': return '?';
+    case KSPK: return '0';
+    case 'A': return '4';
+    case 'B': return ')';
+    case 'C': return '9';
+    case 'D': return '6';
+    case 'E': return '3';
+    case 'F': return '\\';
+    case 'G': return '_';
+    case 'H': return ':';
+    case 'I': return '-';
+    case 'J': return ';';
+    case 'K': return '"';
+    case 'L': return '\'';
+    case 'M': return '.';
+    case 'N': return '!';
+    case 'O': return '+';
+    case 'P': return '=';
+    case 'Q': return '1';
+    case 'R': return '@';
+    case 'S': return '5';
+    case 'T': return '#';
+    case 'U': return '&';
+    case 'V': return '(';
+    case 'W': return '2';
+    case 'X': return '8';
+    case 'Y': return '$';
+    case 'Z': return '7';
+    default: return c;
   }
 }

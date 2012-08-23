@@ -19,16 +19,16 @@
 #include "ioCCxx10_bitdef.h"
 #include "keys.h"
 #include "message.h"
+#include "music.h"
 #include "puellaardens.h"
 #include "pm.h"
 #include "radio.h"
-#include "music.h"
-
 
 /* File global variables. */
 static uint8_t state;
-static uint8_t beeps;
 static bit sleepy;
+
+/* TODO: remove this once all testing code is gone from here. */
 static __xdata uint8_t buf[RADIO_PAYLOAD_MAX];
 
 void switch_state(int8_t new_state) {
@@ -45,9 +45,9 @@ void poll_keyboard() {
   if (key == 0) {
     return;
   }
-  
-  beeps=0;
 
+  message_stop_beeps();
+  
   /* Global keys. */
   if (key == KPWR) {
     sleepy = 1;
@@ -168,6 +168,7 @@ reset:
   radio_init();
 
   /* Initialize app modules. */
+  message_init();
   compose_init();
   inbox_init();
   info_init();
@@ -215,37 +216,12 @@ reset:
   
   }
 
-  beeps = 0;
   radio_listen();
   while (1) {
     poll_keyboard();
 
-    if (beeps) {
-      beep();
-      clock_delayms(300);
-      beeps--;
-    }
+    message_tick();
     
-    /* Quick and dirty receive ability */
-    if (radio_receive_poll(buf)) {
-      radio_listen();
-      
-      /* Hack: s3krit functions in lower case, because */
-      /* people can only type real messages in upper. */
-      if (buf[0] == 'p') {
-        beep();
-        info_gotping();
-      } else if (buf[0] == 'o') {
-        info_gotpong();
-        if (state == STATE_INFO) {
-          info_draw();
-        }
-      } else {
-        beeps = 100;
-        inbox_push_message(buf, 0);
-      }
-    }
-
     /* go to sleep (more or less a shutdown) if power button pressed */
     if (sleepy) {
       clear();

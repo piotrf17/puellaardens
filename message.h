@@ -25,3 +25,15 @@ typedef struct {
   /* Various attributes, defined above. */
   uint8_t attr;
 } MessageInfo;
+
+/* very important */
+#define TWENTYTWO 22
+
+/* Initialize message module. */
+void message_init();
+
+/* Stop the beeping! */
+void message_stop_beeps();
+
+/* Tick for listening to the radio and handling incoming messages. */
+void message_tick();
