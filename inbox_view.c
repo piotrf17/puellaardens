@@ -109,18 +109,6 @@ void move_to_prev_message() {
   }
 }
 
-void inbox_push_message(char *message) {
-  if (((last_msg_ + 1) % NUM_MESSAGES) == first_msg_) {
-    // inbox is full, drop the oldest
-    first_msg_++;
-    first_msg_ %= NUM_MESSAGES;
-  }
-  last_msg_++;
-  last_msg_ %= NUM_MESSAGES;
-  strcpy(msg_buffer_[last_msg_].text, message);
-  msg_buffer_[last_msg_].attr = MSG_ATTR_NEW;
-}
-
 void inbox_init_test_messages() {
 #define ADD_TEST_MSG(_i, _msg, _attr)     \
   strcpy(msg_buffer_[_i].text, _msg); \
@@ -186,5 +174,20 @@ void inbox_handle_keypress(uint8_t key) {
       inbox_draw();
       break;
 
+  }
+}
+
+void inbox_push_message(char *message, bit mine) {
+  /* If inbox is full, drop the oldest message. */
+  if (((last_msg_ + 1) % NUM_MESSAGES) == first_msg_) {
+    first_msg_ = (first_msg_ + 1) % NUM_MESSAGES;
+    first_msg_ %= NUM_MESSAGES;
+  }
+  
+  last_msg_ = (last_msg_ + 1) % NUM_MESSAGES;
+  strcpy(msg_buffer_[last_msg_].text, message);
+  msg_buffer_[last_msg_].attr = MSG_ATTR_NEW;
+  if (mine) {
+    msg_buffer_[last_msg_].attr |= MSG_ATTR_MINE;
   }
 }

@@ -167,7 +167,7 @@ reset:
   /* Initialize app modules. */
   compose_init();
   inbox_init();
-  
+
   inbox_draw();
 
   if (test_radio) {
@@ -232,7 +232,7 @@ reset:
       setCursor(3, 0);
       printf("RSSI: %d, LQI: %02X", radio_last_rssi, radio_last_lqi); 
       SSN = HIGH;
-      inbox_push_message(buf);
+      inbox_push_message(buf, 0);
       radio_listen();
     }
 

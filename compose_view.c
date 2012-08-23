@@ -9,6 +9,7 @@
 #include "clock.h"
 #include "compose_view.h"
 #include "display.h"
+#include "inbox_view.h"
 #include "keys.h"
 #include "message.h"
 #include "puellaardens.h"
@@ -106,10 +107,11 @@ static void send_message() {
 
 //  }
 
+  inbox_push_message(compose_buffer_, 1);
+  
   /* Reset the compose view. */
   state_ = COMPOSE_STATE_WRITING;
   compose_new_message();
-
 
   /* Switch back to the inbox view. */
   switch_state(STATE_VIEW);
