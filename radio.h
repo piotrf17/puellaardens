@@ -18,7 +18,9 @@ uint8_t radio_receive_poll (uint8_t *packet); // Did we receive a complete messa
                                               
 uint8_t radio_recv_packet_block(void *packet);  // Blocking receive using the above two functions 
 
-char radio_still_sending(); //Poll whether the radio is still transmitting
+/* Poll whether the radio is still transmitting, if so returns
+ * approximately the number of packets left to recieve. */
+uint8_t radio_still_sending();
 
 
 void rftxrx_ISR(void)  __interrupt (0) __using (1);

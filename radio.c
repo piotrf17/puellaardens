@@ -28,10 +28,18 @@ void rftxrx_ISR(void)  __interrupt (0) __using (1) {
 // 12 corn muffin 0 rssi lqi 
 // 0             12  13  14
 //
-char radio_still_sending() { // Poll whether the radio is still transmitting
-//  return RFTXRXIE;
-  //    return (rf_packet_ix < rf_packet_n);
-  return !(RFIF & RFIF_IM_DONE);
+
+uint8_t radio_still_sending() {
+  if (!(RFIF & RFIF_IM_DONE)) {
+    /* If transmitting, always return at least one. */
+    if (rf_packet_ix == rf_packet_n) {
+      return 1;
+    } else {
+      return rf_packet_n - rf_packet_ix;
+    }
+  } else {
+    return 0;
+  }
 }
 
 void radio_listen() { // Go into "listen mode"

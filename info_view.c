@@ -7,7 +7,9 @@
 
 #include "clock.h"
 #include "display.h"
+#include "info_view.h"
 #include "keys.h"
+#include "music.h"
 #include "radio.h"
 
 #define MAX_PINGS 12
@@ -17,13 +19,16 @@ static int8_t num_pings_;
 
 /* Ping for nearby girltechs. */
 void ping() {
+  int8_t timeout;
+  
   num_pings_ = 0;
   info_draw();
   
   display_print_message("Pinging now...", 2, 0);
   radio_send_packet("p");
-  while (radio_still_sending()) {
-    clock_delayms(400);
+  timeout = 25;
+  while (--timeout && radio_still_sending()) {
+    clock_delayms(200);
   }
   radio_listen();
   
@@ -34,9 +39,14 @@ void ping() {
 
 /* Someone pinged us. */
 void info_gotping() {
+  int8_t timeout;
+
+  beep();
+  
   radio_send_packet("o");
-  while (radio_still_sending()) {
-    clock_delayms(50);
+  timeout = 25;
+  while (--timeout && radio_still_sending()) {
+    clock_delayms(100);
   }
   radio_listen();
 }

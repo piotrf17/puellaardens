@@ -78,6 +78,7 @@ static void compose_new_message() {
 }
 
 static void send_message() {
+  int8_t timeout;
 
 //  while(1) {
 
@@ -90,8 +91,9 @@ static void send_message() {
   setCursor(7, 0);
   putchar('8');
   SSN = HIGH;
-  
-  while (radio_still_sending()) {
+
+  timeout = 25;
+  while (--timeout && radio_still_sending()) {
     clock_delayms(400);
     SSN = LOW;
     putchar('=');
