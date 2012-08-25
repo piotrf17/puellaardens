@@ -87,7 +87,8 @@ void compose_init() {
 }
 
 void compose_draw() {
-  int8_t row, msg_len, msg_pos = 0, col;
+  int8_t row, msg_len, msg_pos = 0;
+  uint8_t col;
   
   clear();
 
@@ -207,15 +208,22 @@ bit compose_tick() {
       ++progress_;
       return 1;
     } else {
-      inbox_push_message(compose_buffer_, 1);
-
-      /* Reset the compose view. */
-      state_ = COMPOSE_STATE_WRITING;
-      compose_new_message();
+      if (message_send_succeeded()) {
+        inbox_push_message(compose_buffer_, 1);
+        
+        /* Reset the compose view. */
+        state_ = COMPOSE_STATE_WRITING;
+        compose_new_message();
       
-      /* Switch state to the inbox view, which also */
-      /* forces an inbox redraw. */
-      switch_state(STATE_VIEW);
+        /* Switch state to the inbox view, which also */
+        /* forces an inbox redraw. */
+        switch_state(STATE_VIEW);
+      } else {
+        /* Go back to writing, but don't clear the message. */
+        state_ = COMPOSE_STATE_WRITING;
+        switch_state(STATE_COMPOSE);
+        display_print_message("Transmit timed out :(", 7, 0);
+      }
     }
   }
   return 0;

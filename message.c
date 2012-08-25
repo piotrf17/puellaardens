@@ -22,6 +22,7 @@ static __xdata uint8_t buf_[RADIO_PAYLOAD_MAX];
 static int8_t beeps_;
 static int8_t state_;
 static uint8_t timeout_;
+static bit last_failed_;
 
 /* Internal functions. */
 
@@ -41,6 +42,7 @@ void handle_command() {
 void message_init() {
   beeps_ = 0;
   state_ = MESSAGE_STATE_LISTEN;
+  last_failed_ = 0;
   radio_listen();
 }
 
@@ -61,6 +63,10 @@ bit message_still_sending() {
   return state_ == MESSAGE_STATE_SENDING;
 }
 
+bit message_send_succeeded() {
+  return !last_failed_;
+}
+
 void message_tick() {
   if (state_ == MESSAGE_STATE_SENDING) {
     if (radio_still_sending()) {
@@ -68,10 +74,12 @@ void message_tick() {
 
       if (--timeout_ == 0) {
         state_ = MESSAGE_STATE_LISTEN;
+        last_failed_ = 1;
         radio_listen();
       }
     } else {
       state_ = MESSAGE_STATE_LISTEN;
+      last_failed_ = 0;
       radio_listen();
     }
   } else {

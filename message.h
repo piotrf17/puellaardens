@@ -38,6 +38,11 @@ void message_stop_beeps();
 /* Tick for listening to the radio and handling incoming messages. */
 void message_tick();
 
+/* Send a message in the background. */
 void message_send(const char* buf);
 
+/* Are we still sending a message? */
 bit message_still_sending();
+
+/* See if the last transmission timed out or not. */
+bit message_send_succeeded();
