@@ -24,6 +24,9 @@ typedef struct {
 
   /* Various attributes, defined above. */
   uint8_t attr;
+
+  /* A random, hopefully unique ID on the message. */
+  uint8_t id;
 } MessageInfo;
 
 /* very important */

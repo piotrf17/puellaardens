@@ -3,6 +3,7 @@
  */
 
 #include <cc1110.h>
+#include <string.h>
 
 #include "clock.h"
 #include "display.h"
@@ -12,6 +13,7 @@
 #include "message.h"
 #include "music.h"
 #include "radio.h"
+#include "random.h"
 
 /* Possible states for the message module. */
 #define MESSAGE_STATE_LISTEN  0
@@ -51,9 +53,22 @@ void message_stop_beeps() {
 }
 
 void message_send(const char* buf) {
+  uint8_t len;
+  
   if (state_ == MESSAGE_STATE_LISTEN) {
     state_ = MESSAGE_STATE_SENDING;
-    radio_send_packet(buf);
+    
+    /* Yet another copy.  We could probaby remove a bunch of these. */
+    strcpy(buf_, buf);
+
+    /* Add a 4 byte random tag after the string. */
+    len = strlen(buf_);
+    buf_[len + 1] = random_byte();
+    buf_[len + 2] = random_byte();
+    buf_[len + 3] = random_byte();
+    buf_[len + 4] = random_byte();
+
+    radio_send_packet(buf_, len + 5);
 
     /* 85 byte max message @ 50 baud = 13 seconds. */
     /* With 100ms delay, set timeout to 150. */

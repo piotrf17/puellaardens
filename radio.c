@@ -1,5 +1,10 @@
-#include "cc1111.h"
+/*
+ * Puella Ardens - Burning Man GirlTech based IM communicator.
+ */
+
 #include <string.h>
+
+#include "cc1111.h"
 #include "radio.h"
 
 uint8_t __xdata rf_packet[RADIO_PAYLOAD_MAX+3];
@@ -68,20 +73,19 @@ uint8_t radio_recv_packet_block(void *packet) {  //go into receive mode, wait fo
     return n;
 }
 
-void radio_send_packet(const void *packet) { //send the packet over RF
-      rf_packet[0] = strlen(packet) + 1;  // payload length ( + 1 byte to include the null termination)
-      memcpy(&rf_packet[1], packet, rf_packet[0]);
+void radio_send_packet(const uint8_t *packet, uint8_t len) {
+  rf_packet[0] = len;
+  memcpy(&rf_packet[1], packet, rf_packet[0]);
 
-      rf_packet_n = rf_packet[0] + 1;  // include the length byte in the total number of bytes to send
-      rf_packet_ix = 0;
-      rf_mode_tx = 1;
+  rf_packet_n = rf_packet[0] + 1;  // include the length byte in the total number of bytes to send
+  rf_packet_ix = 0;
+  rf_mode_tx = 1;
      
-      RFTXRXIF = 0;
-      RFST = RFST_STX;
-      RFIF &= ~RFIF_IM_DONE;      
-      
-      RFTXRXIE = 1;
-
+  RFTXRXIF = 0;
+  RFST = RFST_STX;
+  RFIF &= ~RFIF_IM_DONE;      
+  
+  RFTXRXIE = 1;
 }
 
 void radio_regs(void) {

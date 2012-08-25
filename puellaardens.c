@@ -134,7 +134,7 @@ void repeater_mode() {
     LEDR = 0; LEDG = 1;
  //   print_message("* Sending...",2,0);
 
-    radio_send_packet(buf);
+    radio_send_packet(buf, strlen(buf) + 1);
     while (radio_still_sending()) {          
       clock_delayms(100);
  //     SSN = LOW;
@@ -157,7 +157,7 @@ void run_test_radio() {
   clear();
   display_print_message("SENDING MSG", 0, 0);
 
-  radio_send_packet("CORN MUFFIN");
+  radio_send_packet("CORN MUFFIN", 11);
   while (radio_still_sending()) {          
     clock_delayms(100);
     display_print_message(".", 0, wait_col);
@@ -181,7 +181,7 @@ void run_test_radio() {
   
   display_print_message("SENDING ANOTHER", 4, 0);
 
-  radio_send_packet("POOP");
+  radio_send_packet("POOP", 5);
   while (radio_still_sending()) {          
     clock_delayms(100);
     SSN = LOW;
