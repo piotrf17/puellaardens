@@ -122,23 +122,6 @@ void move_to_prev_message() {
   }
 }
 
-void inbox_init_test_messages() {
-  ADD_TEST_MSG(16, "MATT IS A DORK.  ALSO HE SMELLS FUNNY.", 0);
-  ADD_TEST_MSG(17, "DINNER SERVING IN 30 MINUTES, SLOP FOR ALL.", 0);
-  ADD_TEST_MSG(18, "MASSIVE WHITEOUT COMING, TAKE COVER!", MSG_ATTR_NEW | MSG_ATTR_MINE | MSG_ATTR_SENT);
-  ADD_TEST_MSG(19, "THIS MESSAGE IS LONG, TO TEST OUT LONG MESSAGES.  IT IS 3 LINES LONG.", MSG_ATTR_NEW);
-  ADD_TEST_MSG(20, "SWEET LEITSHOW STARTING IN 22 MINUTES", MSG_ATTR_NEW);
-  ADD_TEST_MSG(21, "WILD ELMO HAS APPEARED.", MSG_ATTR_NEW | MSG_ATTR_MINE);
-  ADD_TEST_MSG(0, "SNELLA CAME BY THE DOME AND ATE ALL THE FOOD", MSG_ATTR_NEW);
-  ADD_TEST_MSG(1, "ANYONE WANT TO TIME TRAVEL?  LEAVING 5 MINUTES AGO", MSG_ATTR_NEW);
-  ADD_TEST_MSG(2, "TOILETS ARE ALL FULL #POOPTROUBLES", MSG_ATTR_NEW);
-  ADD_TEST_MSG(3, "HENRY HAS A STINKY BUTT", MSG_ATTR_NEW);
-
-  cur_msg_ = 18;
-  first_msg_ = 16;
-  last_msg_ = 3;
-}
-
 /* Public API. */
 
 void inbox_init() {
@@ -152,10 +135,6 @@ void inbox_init() {
   ADD_TEST_MSG(2, "Hit menu to switch to compose view, and menu again to return.", 0);
   ADD_TEST_MSG(3, "Press Enter while composing to send your message.", 0);
   last_msg_ = 3;
-
-  /* For testing purposes. */
-  /* TODO: remove this function. */
-  /*  inbox_init_test_messages();*/
 }
 
 void inbox_draw() {
@@ -164,7 +143,11 @@ void inbox_draw() {
   clear();
 
   row = 0;
-  for (msg = cur_msg_;
+  /* To handle a boundary condition, render the first message seperately. */
+  if (first_msg_ != last_msg_) {
+    row = draw_message(&msg_buffer_[cur_msg_], row);
+  }
+  for (msg = cur_msg_ + 1;
        msg != (last_msg_ + 1) % NUM_MESSAGES && row < CHAR_HEIGHT;
        msg = (msg + 1) % NUM_MESSAGES) {
     row = draw_message(&msg_buffer_[msg], row);

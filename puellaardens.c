@@ -195,6 +195,13 @@ void run_test_radio() {
 void main(void) {
   bit test_radio = 0;
   bit bounce_radio = 0;
+
+  /* Initialize app modules. Not reinitialized upon reset. */
+  message_init();
+  compose_init();
+  inbox_init();
+  info_init();
+  
 reset:
   sleepy_ = 0;
   state_ = STATE_VIEW;
@@ -209,12 +216,6 @@ reset:
   configureSPI();
   LCDReset();
   radio_init();
-
-  /* Initialize app modules. */
-  message_init();
-  compose_init();
-  inbox_init();
-  info_init();
 
   inbox_draw();
 
