@@ -28,6 +28,7 @@ uint8_t draw_message(const MessageInfo* msg, uint8_t row) {
   uint8_t msg_pos = 0;
   uint8_t col = 0;
   bit last_row = 0;
+  char start_char = '>';
   
   SSN = LOW;
   setDisplayStart(0);
@@ -37,10 +38,13 @@ uint8_t draw_message(const MessageInfo* msg, uint8_t row) {
     last_row = 1;
   }
   setCursor(row, 0);
+  if (msg->attr & MSG_ATTR_MINE) {
+    start_char = '$';
+  }
   if (last_row) {
-    putchar_mask('>', 0x80);
+    putchar_mask(start_char, 0x80);
   } else {
-    putchar('>');
+    putchar(start_char);
   }
   for (col = 1; col < CHAR_WIDTH - 1 && msg_pos < msg_len; ++col, ++msg_pos) {
     if (last_row) {
