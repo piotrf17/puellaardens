@@ -27,7 +27,7 @@ static int8_t cursor_pos_;
 static int8_t msg_len_;
 static bit alt_on_;
 static int8_t state_;
-static int8_t progress_;
+static uint8_t progress_;
 
 /* Internal functions. */
 
