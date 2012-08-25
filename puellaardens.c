@@ -23,6 +23,7 @@
 #include "puellaardens.h"
 #include "pm.h"
 #include "radio.h"
+#include "random.h"
 
 /* File global variables. */
 static uint8_t state_;
@@ -216,8 +217,18 @@ reset:
   configureSPI();
   LCDReset();
   radio_init();
+  random_init();
 
-  inbox_draw();
+  clear();
+  SSN = LOW;
+  setDisplayStart(0);
+  setCursor(0, 0);
+  printf("Random bytes");
+  setCursor(1, 0);
+  printf("%d %d %d %d", random_byte(), random_byte(), random_byte(), random_byte());
+  SSN = HIGH;
+  
+  /*  inbox_draw();*/
 
   if (test_radio) {
     run_test_radio();
