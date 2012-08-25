@@ -17,3 +17,6 @@ void info_handle_keypress(uint8_t key);
 /* ping/pongs */
 void info_gotping();
 void info_gotpong();
+
+/* Handle background tasks, returns 1 if needs redraw. */
+bit info_tick();

@@ -233,6 +233,9 @@ reset:
     if (compose_tick() && state_ == STATE_COMPOSE) {
       compose_draw();
     }
+    if (info_tick() && state_ == STATE_INFO) {
+      info_draw();
+    }
 
     /* go to sleep (more or less a shutdown) if power button pressed */
     if (sleepy_) {

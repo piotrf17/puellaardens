@@ -51,12 +51,14 @@ void message_stop_beeps() {
 }
 
 void message_send(const char* buf) {
-  state_ = MESSAGE_STATE_SENDING;
-  radio_send_packet(buf);
+  if (state_ == MESSAGE_STATE_LISTEN) {
+    state_ = MESSAGE_STATE_SENDING;
+    radio_send_packet(buf);
 
-  /* 85 byte max message @ 50 baud = 13 seconds. */
-  /* With 100ms delay, set timeout to 150. */
-  timeout_ = 150;
+    /* 85 byte max message @ 50 baud = 13 seconds. */
+    /* With 100ms delay, set timeout to 150. */
+    timeout_ = 150;
+  }
 }
 
 bit message_still_sending() {

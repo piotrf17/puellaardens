@@ -179,6 +179,7 @@ void compose_handle_keypress(uint8_t key) {
       case '\n':
         state_ = COMPOSE_STATE_CONFIRM;
         compose_draw();
+        break;
       default:
         if (key >= 'A' && key <= 'Z') {
           add_char(key);
@@ -189,10 +190,14 @@ void compose_handle_keypress(uint8_t key) {
   } else if (state_ == COMPOSE_STATE_CONFIRM) {
     switch (key) {
       case 'Y':
-        state_ = COMPOSE_STATE_SENDING;
-        message_send(compose_buffer_);
-        progress_ = 0;
-        compose_draw();        
+        /* If we're still replying to a ping, hackily ignore the Y */
+        /* and hope the user just tries pressing Y again. */
+        if (!message_still_sending()) {
+          state_ = COMPOSE_STATE_SENDING;
+          message_send(compose_buffer_);
+          progress_ = 0;
+          compose_draw();
+        }
         break;
       case 'N':
         state_ = COMPOSE_STATE_WRITING;

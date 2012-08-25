@@ -9,28 +9,27 @@
 #include "display.h"
 #include "info_view.h"
 #include "keys.h"
+#include "message.h"
 #include "music.h"
 #include "radio.h"
 
 #define MAX_PINGS 12
 
+/* File global variables. */
 static int8_t __xdata pings_[MAX_PINGS];
 static int8_t num_pings_;
+bit need_redraw_;
 
-/* Ping for nearby girltechs. */
+/* Ping for nearby girltechs.  The ping is sent in the foreground. */
 void ping() {
-  int8_t timeout;
-  
   num_pings_ = 0;
   info_draw();
   
   display_print_message("Pinging now...", 2, 0);
-  radio_send_packet("p");
-  timeout = 25;
-  while (--timeout && radio_still_sending()) {
-    clock_delayms(200);
+  message_send("p");
+  while (message_still_sending()) {
+    message_tick();
   }
-  radio_listen();
   
   display_print_message("pung", 2, 70);
 }
@@ -39,16 +38,12 @@ void ping() {
 
 /* Someone pinged us. */
 void info_gotping() {
-  int8_t timeout;
-
   beep();
-  
-  radio_send_packet("o");
-  timeout = 25;
-  while (--timeout && radio_still_sending()) {
-    clock_delayms(100);
+
+  /* If we're currently sending a message, ignore the ping. */
+  if (!message_still_sending()) {
+    message_send("o");
   }
-  radio_listen();
 }
 
 /* We got back a ping. */
@@ -56,15 +51,19 @@ void info_gotpong() {
   if (num_pings_ < MAX_PINGS) {
     pings_[num_pings_] = radio_last_rssi;
     num_pings_++;
+    need_redraw_ = 1;
   }
 }
 
 void info_init() {
   num_pings_ = 0;
+  need_redraw_ = 0;
 }
 
 void info_draw() {
   int8_t i, row, col;
+
+  need_redraw_ = 0;
   
   clear();
 
@@ -98,7 +97,14 @@ void info_draw() {
 void info_handle_keypress(uint8_t key) {
   switch (key) {
     case KONL:
-      ping();
+      /* Only allow ping if we're not already sending a message. */
+      if (!message_still_sending()) {
+        ping();
+      }
       break;
   }
+}
+
+bit info_tick() {
+  return need_redraw_;
 }
