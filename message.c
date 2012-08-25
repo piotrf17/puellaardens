@@ -52,7 +52,7 @@ void message_stop_beeps() {
   beeps_ = 0;
 }
 
-void message_send(const char* buf) {
+void message_send(const char* buf, uint8_t* id) {
   uint8_t len;
   
   if (state_ == MESSAGE_STATE_LISTEN) {
@@ -67,12 +67,13 @@ void message_send(const char* buf) {
     buf_[len + 2] = random_byte();
     buf_[len + 3] = random_byte();
     buf_[len + 4] = random_byte();
+    memcpy(id, buf_ + len + 1, 4);
 
     radio_send_packet(buf_, len + 5);
 
-    /* 85 byte max message @ 50 baud = 13 seconds. */
-    /* With 100ms delay, set timeout to 150. */
-    timeout_ = 150;
+    /* 89 byte max message @ 50 baud ~ 14 seconds. */
+    /* With 250ms delay, set timeout to 100 to be safe. */
+    timeout_ = 100;
   }
 }
 
@@ -87,7 +88,7 @@ bit message_send_succeeded() {
 void message_tick() {
   if (state_ == MESSAGE_STATE_SENDING) {
     if (radio_still_sending()) {
-      clock_delayms(100);
+      clock_delayms(250);
 
       if (--timeout_ == 0) {
         state_ = MESSAGE_STATE_LISTEN;
@@ -119,7 +120,10 @@ void message_tick() {
         handle_command();
       } else {
         beeps_ = TWENTYTWO;
-        inbox_push_message(buf_, 0);
+
+        /* The message id will just be garbage memory for messages */
+        /* from old versions of the code. */
+        inbox_push_message(buf_, 0, buf_ + strlen(buf_) + 1);
         inbox_draw();
       }
     }

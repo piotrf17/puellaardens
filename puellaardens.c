@@ -226,6 +226,7 @@ reset:
   }
 
   /* Main loop. */
+  radio_listen();
   while (1) {
     poll_keyboard();
 

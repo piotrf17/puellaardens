@@ -17,6 +17,8 @@
 
 /* File global variables. */
 static int8_t __xdata pings_[MAX_PINGS];
+static uint8_t __xdata ping_id_[4];
+static uint8_t __xdata pong_id_[4];
 static int8_t num_pings_;
 bit need_redraw_;
 
@@ -26,7 +28,7 @@ void ping() {
   info_draw();
   
   display_print_message("Pinging now...", 2, 0);
-  message_send("p");
+  message_send("p", ping_id_);
   while (message_still_sending()) {
     message_tick();
   }
@@ -42,7 +44,7 @@ void info_gotping() {
 
   /* If we're currently sending a message, ignore the ping. */
   if (!message_still_sending()) {
-    message_send("o");
+    message_send("o", pong_id_);
   }
 }
 

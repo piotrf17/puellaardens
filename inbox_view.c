@@ -13,7 +13,7 @@
 
 #define ADD_TEST_MSG(_i, _msg, _attr) \
   strcpy(msg_buffer_[_i].text, _msg); \
-  msg_buffer_[_i].attr = _attr;
+  msg_buffer_[_i].attr = _attr; \
 
 /* File global variables. */
 static __xdata MessageInfo msg_buffer_[NUM_MESSAGES];
@@ -105,6 +105,14 @@ uint8_t draw_message(const MessageInfo* msg, uint8_t row) {
     ++row;
   }
   
+  /* For debugging, output the 4 byte message id */
+  /*  if (row < CHAR_HEIGHT) {
+    setCursor(row, 0);
+    printf("id: %x %x %x %x",
+           msg->id[0], msg->id[1], msg->id[2], msg->id[3]);
+    ++row;
+    }*/
+  
   SSN = HIGH;
   return row;
 }
@@ -143,12 +151,8 @@ void inbox_draw() {
   clear();
 
   row = 0;
-  /* To handle a boundary condition, render the first message seperately. */
-  if (first_msg_ != last_msg_) {
-    row = draw_message(&msg_buffer_[cur_msg_], row);
-  }
-  for (msg = cur_msg_ + 1;
-       msg != (last_msg_ + 1) % NUM_MESSAGES && row < CHAR_HEIGHT;
+  for (msg = cur_msg_;
+       msg <= last_msg_ && row < CHAR_HEIGHT;
        msg = (msg + 1) % NUM_MESSAGES) {
     row = draw_message(&msg_buffer_[msg], row);
   }
@@ -171,15 +175,29 @@ void inbox_handle_keypress(uint8_t key) {
   }
 }
 
-void inbox_push_message(char *message, bit mine) {
+void inbox_push_message(const char *message, bit mine, const uint8_t* id) {
+  uint8_t msg;
+  /* See if we have this message already. */
+  for (msg = first_msg_;
+       msg <= last_msg_ % NUM_MESSAGES;
+       msg = (msg + 1) % NUM_MESSAGES) {
+    if (!memcmp(id, msg_buffer_[msg].id, 4)) {
+      /* If this is one of ours, confirm that we got a reply. */
+      if (msg_buffer_[msg].attr & MSG_ATTR_MINE) {
+        msg_buffer_[msg].attr |= MSG_ATTR_SENT;
+      }
+      return;
+    }
+  }
+  
   /* If inbox is full, drop the oldest message. */
   if (((last_msg_ + 1) % NUM_MESSAGES) == first_msg_) {
     first_msg_ = (first_msg_ + 1) % NUM_MESSAGES;
-    first_msg_ %= NUM_MESSAGES;
   }
-  
   last_msg_ = (last_msg_ + 1) % NUM_MESSAGES;
+
   strcpy(msg_buffer_[last_msg_].text, message);
+  memcpy(msg_buffer_[last_msg_].id, id, 4);
   msg_buffer_[last_msg_].attr = MSG_ATTR_NEW;
   if (mine) {
     msg_buffer_[last_msg_].attr |= MSG_ATTR_MINE;

@@ -22,7 +22,8 @@
 #define COMPOSE_STATE_SENDING 2  /* animated progress bar */
 
 /* File global variables. */
-static __xdata char compose_buffer_[MSG_TEXT_SIZE];
+static __xdata char compose_buffer_[MSG_TEXT_SIZE + 22];
+static __xdata uint8_t msg_id_[4];
 static int8_t cursor_pos_;
 static int8_t msg_len_;
 static bit alt_on_;
@@ -135,9 +136,9 @@ void compose_draw() {
     setCursor(7, 0);
     putchar('8');
     /* The division on progress_ depends on the delay and timeout */
-    /* specified in message.c.  Right now timeout = 150, and with */
-    /* ~25 columns, 8 should give us enough room for the whole bar. */
-    for (col = 0; col < progress_ / 8; ++col) {
+    /* specified in message.c.  Right now timeout = 100, and with */
+    /* ~25 columns, 4 should give us enough room for the whole bar. */
+    for (col = 0; col < progress_ / 4; ++col) {
       putchar('=');
     }
     putchar('D');
@@ -194,7 +195,8 @@ void compose_handle_keypress(uint8_t key) {
         /* and hope the user just tries pressing Y again. */
         if (!message_still_sending()) {
           state_ = COMPOSE_STATE_SENDING;
-          message_send(compose_buffer_);
+          message_send(compose_buffer_,
+                       msg_id_);
           progress_ = 0;
           compose_draw();
         }
@@ -214,7 +216,7 @@ bit compose_tick() {
       return 1;
     } else {
       if (message_send_succeeded()) {
-        inbox_push_message(compose_buffer_, 1);
+        inbox_push_message(compose_buffer_, 1, msg_id_);
         
         /* Reset the compose view. */
         state_ = COMPOSE_STATE_WRITING;

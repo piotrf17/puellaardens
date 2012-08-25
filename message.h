@@ -26,7 +26,7 @@ typedef struct {
   uint8_t attr;
 
   /* A random, hopefully unique ID on the message. */
-  uint8_t id;
+  uint8_t id[4];
 } MessageInfo;
 
 /* very important */
@@ -41,8 +41,9 @@ void message_stop_beeps();
 /* Tick for listening to the radio and handling incoming messages. */
 void message_tick();
 
-/* Send a message in the background. */
-void message_send(const char* buf);
+/* Send a message in the background. Fails silently if we're already */
+/* sending a message.  Returns the 4 byte id of the sent message in id. */
+void message_send(const char* buf, uint8_t* id);
 
 /* Are we still sending a message? */
 bit message_still_sending();

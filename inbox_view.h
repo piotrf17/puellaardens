@@ -20,4 +20,4 @@ void inbox_draw();
 void inbox_handle_keypress(uint8_t key);
 
 /* Push a message into the inbox. */
-void inbox_push_message(char *message, bit mine);
+void inbox_push_message(const char *message, bit mine, const uint8_t* id);
