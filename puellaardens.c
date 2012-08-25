@@ -218,17 +218,8 @@ reset:
   LCDReset();
   radio_init();
   random_init();
-
-  clear();
-  SSN = LOW;
-  setDisplayStart(0);
-  setCursor(0, 0);
-  printf("Random bytes");
-  setCursor(1, 0);
-  printf("%d %d %d %d", random_byte(), random_byte(), random_byte(), random_byte());
-  SSN = HIGH;
   
-  /*  inbox_draw();*/
+  inbox_draw();
 
   if (test_radio) {
     run_test_radio();
