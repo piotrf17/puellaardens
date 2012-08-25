@@ -43,7 +43,7 @@ void message_tick();
 
 /* Send a message in the background. Fails silently if we're already */
 /* sending a message.  Returns the 4 byte id of the sent message in id. */
-void message_send(const char* buf, uint8_t* id);
+void message_send(const char* buf, uint8_t* id, bit use_id);
 
 /* Are we still sending a message? */
 bit message_still_sending();

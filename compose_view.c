@@ -196,7 +196,7 @@ void compose_handle_keypress(uint8_t key) {
         if (!message_still_sending()) {
           state_ = COMPOSE_STATE_SENDING;
           message_send(compose_buffer_,
-                       msg_id_);
+                       msg_id_, 0);
           progress_ = 0;
           compose_draw();
         }

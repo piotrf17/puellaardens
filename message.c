@@ -31,10 +31,10 @@ static bit last_failed_;
 void handle_command() {
   switch(buf_[0]) {
     case 'p':
-      info_gotping();
+      info_gotping(&buf_[1]);
       break;
     case 'o':
-      info_gotpong();
+      info_gotpong(&buf_[1]);
       break;
   }
 }
@@ -52,7 +52,7 @@ void message_stop_beeps() {
   beeps_ = 0;
 }
 
-void message_send(const char* buf, uint8_t* id) {
+void message_send(const char* buf, uint8_t* id, bit use_id) {
   uint8_t len;
   
   if (state_ == MESSAGE_STATE_LISTEN) {
@@ -63,11 +63,15 @@ void message_send(const char* buf, uint8_t* id) {
 
     /* Add a 4 byte random tag after the string. */
     len = strlen(buf_);
-    buf_[len + 1] = random_byte();
-    buf_[len + 2] = random_byte();
-    buf_[len + 3] = random_byte();
-    buf_[len + 4] = random_byte();
-    memcpy(id, buf_ + len + 1, 4);
+    if (use_id) {
+      memcpy(buf_ + len + 1, id, 4);
+    } else {
+      buf_[len + 1] = random_byte();
+      buf_[len + 2] = random_byte();
+      buf_[len + 3] = random_byte();
+      buf_[len + 4] = random_byte();
+      memcpy(id, buf_ + len + 1, 4);
+    }
 
     radio_send_packet(buf_, len + 5);
 

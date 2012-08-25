@@ -4,6 +4,7 @@
 
 #include <cc1110.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "clock.h"
 #include "display.h"
@@ -28,7 +29,7 @@ void ping() {
   info_draw();
   
   display_print_message("Pinging now...", 2, 0);
-  message_send("p", ping_id_);
+  message_send("p", ping_id_, 0);
   while (message_still_sending()) {
     message_tick();
   }
@@ -39,21 +40,23 @@ void ping() {
 /* Public API */
 
 /* Someone pinged us. */
-void info_gotping() {
+void info_gotping(const uint8_t* ping_id) {
   beep();
 
   /* If we're currently sending a message, ignore the ping. */
   if (!message_still_sending()) {
-    message_send("o", pong_id_);
+    message_send("o", ping_id, 1);
   }
 }
 
 /* We got back a ping. */
-void info_gotpong() {
-  if (num_pings_ < MAX_PINGS) {
-    pings_[num_pings_] = radio_last_rssi;
-    num_pings_++;
-    need_redraw_ = 1;
+void info_gotpong(const uint8_t* ping_id) {
+  if (memcmp(ping_id, ping_id_, 4)) {
+    if (num_pings_ < MAX_PINGS) {
+      pings_[num_pings_] = radio_last_rssi;
+      num_pings_++;
+      need_redraw_ = 1;
+    }
   }
 }
 
