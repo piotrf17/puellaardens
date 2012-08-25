@@ -27,6 +27,7 @@ static int8_t cursor_pos_;
 static int8_t msg_len_;
 static bit alt_on_;
 static int8_t state_;
+static int8_t progress_;
 
 /* Internal functions. */
 
@@ -77,48 +78,6 @@ static void compose_new_message() {
   compose_buffer_[0] = '\0';
 }
 
-static void send_message() {
-  int8_t timeout;
-
-//  while(1) {
-
-  SSN = LOW;
-  setDisplayStart(0);
-  setCursor(6, 0);
-  printf("Transmitting!");
-
-  radio_send_packet(compose_buffer_);
-  setCursor(7, 0);
-  putchar('8');
-  SSN = HIGH;
-
-  timeout = 25;
-  while (--timeout && radio_still_sending()) {
-    clock_delayms(400);
-    SSN = LOW;
-    putchar('=');
-    SSN = HIGH;
-  }
-  radio_listen(); // go back into receive mode
-
-  clock_delayms(500);
-  SSN = LOW;
-  putchar('D');
-  SSN = HIGH;
-  clock_delayms(500);
-
-//  }
-
-  inbox_push_message(compose_buffer_, 1);
-  
-  /* Reset the compose view. */
-  state_ = COMPOSE_STATE_WRITING;
-  compose_new_message();
-
-  /* Switch back to the inbox view. */
-  switch_state(STATE_VIEW);
-}
-
 /* Public API. */
 
 void compose_init() {
@@ -161,14 +120,26 @@ void compose_draw() {
     row += 1;
   }
 
-  if (state_ == COMPOSE_STATE_CONFIRM) {
+  if (state_ == COMPOSE_STATE_WRITING) {
+    if (alt_on_) {
+      setCursor(7, 0);
+      printf("alt keys on");
+    }
+  } else if (state_ == COMPOSE_STATE_CONFIRM) {
     setCursor(5, 0);
     printf("Really send? (Y/N)");
-  }
-  
-  if (alt_on_) {
+  } else if (state_ == COMPOSE_STATE_SENDING) {
+    setCursor(6, 0);
+    printf("Transmitting!");
     setCursor(7, 0);
-    printf("alt keys on");
+    putchar('8');
+    /* The division on progress_ depends on the delay and timeout */
+    /* specified in message.c.  Right now timeout = 150, and with */
+    /* ~25 columns, 8 should give us enough room for the whole bar. */
+    for (col = 0; col < progress_ / 8; ++col) {
+      putchar('=');
+    }
+    putchar('D');
   }
 
   SSN = HIGH;
@@ -218,8 +189,9 @@ void compose_handle_keypress(uint8_t key) {
     switch (key) {
       case 'Y':
         state_ = COMPOSE_STATE_SENDING;
-        compose_draw();
-        send_message();
+        message_send(compose_buffer_);
+        progress_ = 0;
+        compose_draw();        
         break;
       case 'N':
         state_ = COMPOSE_STATE_WRITING;
@@ -227,4 +199,24 @@ void compose_handle_keypress(uint8_t key) {
         break;
     }
   }
+}
+
+bit compose_tick() {
+  if (state_ == COMPOSE_STATE_SENDING) {
+    if (message_still_sending()) {
+      ++progress_;
+      return 1;
+    } else {
+      inbox_push_message(compose_buffer_, 1);
+
+      /* Reset the compose view. */
+      state_ = COMPOSE_STATE_WRITING;
+      compose_new_message();
+      
+      /* Switch state to the inbox view, which also */
+      /* forces an inbox redraw. */
+      switch_state(STATE_VIEW);
+    }
+  }
+  return 0;
 }

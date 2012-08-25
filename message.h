@@ -37,3 +37,7 @@ void message_stop_beeps();
 
 /* Tick for listening to the radio and handling incoming messages. */
 void message_tick();
+
+void message_send(const char* buf);
+
+bit message_still_sending();

@@ -25,15 +25,15 @@
 #include "radio.h"
 
 /* File global variables. */
-static uint8_t state;
-static bit sleepy;
+static uint8_t state_;
+static bit sleepy_;
 
 /* TODO: remove this once all testing code is gone from here. */
 static __xdata uint8_t buf[RADIO_PAYLOAD_MAX];
 
 void switch_state(int8_t new_state) {
-  state = new_state;
-  switch (state) {
+  state_ = new_state;
+  switch (state_) {
     case STATE_VIEW: inbox_draw(); break;
     case STATE_COMPOSE: compose_draw(); break;
     case STATE_INFO: info_draw(); break;
@@ -50,11 +50,11 @@ void poll_keyboard() {
   
   /* Global keys. */
   if (key == KPWR) {
-    sleepy = 1;
+    sleepy_ = 1;
     return;
   }
   
-  if (state == STATE_VIEW) {
+  if (state_ == STATE_VIEW) {
     switch (key) {
       case KMNU:
         switch_state(STATE_COMPOSE);
@@ -66,7 +66,7 @@ void poll_keyboard() {
         inbox_handle_keypress(key);
         break;
     }
-  } else if (state == STATE_COMPOSE) {
+  } else if (state_ == STATE_COMPOSE) {
     switch (key) {
       case KMNU:
         switch_state(STATE_VIEW);
@@ -78,7 +78,7 @@ void poll_keyboard() {
         compose_handle_keypress(key);
         break;
     }
-  } else if (state == STATE_INFO) {
+  } else if (state_ == STATE_INFO) {
     switch (key) {
       case KBYE:
       case KMNU:
@@ -148,17 +148,60 @@ void repeater_mode() {
   }
 }
 
+/* For debugging, a simple test of the radio. */
+void run_test_radio() {
+  uint8_t wait_col = 55;
+  uint8_t num_rcvd;
+
+  clear();
+  display_print_message("SENDING MSG", 0, 0);
+
+  radio_send_packet("CORN MUFFIN");
+  while (radio_still_sending()) {          
+    clock_delayms(100);
+    display_print_message(".", 0, wait_col);
+    wait_col += 5;
+  }
+
+  display_print_message("SENT! WAITING..", 1, 0);
+  
+  num_rcvd = radio_recv_packet_block(buf);
+  buf[21]='\0';
+  display_print_message(buf, 2, 0);
+    
+  setDisplayStart(0);
+  SSN = LOW;
+  setCursor(3, 0);
+  printf("%d bytes RSSI=%d LQI=%02X", num_rcvd, radio_last_rssi, radio_last_lqi);
+  SSN = HIGH;
+
+  RFST = RFST_SIDLE;
+  clock_delayms(100);
+  
+  display_print_message("SENDING ANOTHER", 4, 0);
+
+  radio_send_packet("POOP");
+  while (radio_still_sending()) {          
+    clock_delayms(100);
+    SSN = LOW;
+    setCursor(5, 0);
+    printf("%d %d %d", rf_packet_ix, rf_packet_n, rf_packet[0]); 
+    SSN = HIGH;
+  }
+
+  display_print_message("SENT!", 5, 0);
+}
+
 void main(void) {
   bit test_radio = 0;
   bit bounce_radio = 0;
-  uint8_t wait_col = 55;
-  uint8_t num_rcvd;
 reset:
-  sleepy = 0;
-  state = STATE_VIEW;
+  sleepy_ = 0;
+  state_ = STATE_VIEW;
   
-  if (bounce_radio)
+  if (bounce_radio) {
     repeater_mode();
+  }
   
   /* Initialize system modules. */
   clock_init();
@@ -176,54 +219,23 @@ reset:
   inbox_draw();
 
   if (test_radio) {
-    clear();
-    display_print_message("SENDING MSG", 0, 0);
-
-    radio_send_packet("CORN MUFFIN");
-    while (radio_still_sending()) {          
-      clock_delayms(100);
-      display_print_message(".", 0, wait_col);
-      wait_col += 5;
-    }
-
-    display_print_message("SENT! WAITING..", 1, 0);
-  
-    num_rcvd = radio_recv_packet_block(buf);
-    buf[21]='\0';
-    display_print_message(buf, 2, 0);
-    
-    setDisplayStart(0);
-    SSN = LOW;
-    setCursor(3, 0);
-    printf("%d bytes RSSI=%d LQI=%02X", num_rcvd, radio_last_rssi, radio_last_lqi);
-    SSN = HIGH;
-
-    RFST = RFST_SIDLE;
-    clock_delayms(100);
-  
-    display_print_message("SENDING ANOTHER", 4, 0);
-
-    radio_send_packet("POOP");
-    while (radio_still_sending()) {          
-      clock_delayms(100);
-      SSN = LOW;
-      setCursor(5, 0);
-      printf("%d %d %d", rf_packet_ix, rf_packet_n, rf_packet[0]); 
-      SSN = HIGH;
-    }
-
-    display_print_message("SENT!", 5, 0);
-  
+    run_test_radio();
   }
 
-  radio_listen();
+  /* Main loop. */
   while (1) {
     poll_keyboard();
 
+    /* Send and receive messages. */
     message_tick();
-    
+
+    /* Handle background tasks (like progress bar) */
+    if (compose_tick() && state_ == STATE_COMPOSE) {
+      compose_draw();
+    }
+
     /* go to sleep (more or less a shutdown) if power button pressed */
-    if (sleepy) {
+    if (sleepy_) {
       clear();
       clock_delayms(1000);
       SSN = LOW;
