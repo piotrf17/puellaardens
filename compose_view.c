@@ -20,6 +20,8 @@
 #define COMPOSE_STATE_WRITING 0  /* writing a message */
 #define COMPOSE_STATE_CONFIRM 1  /* confirm send */
 #define COMPOSE_STATE_SENDING 2  /* animated progress bar */
+#define COMPOSE_STATE_BROADCAST_SEND 3 /* repeat a message */
+#define COMPOSE_STATE_BROADCAST_WAIT 4
 
 /* File global variables. */
 static __xdata char compose_buffer_[MSG_TEXT_SIZE + 22];
@@ -29,6 +31,7 @@ static int8_t msg_len_;
 static bit alt_on_;
 static int8_t state_;
 static uint8_t progress_;
+static uint16_t wait_;
 
 /* Internal functions. */
 
@@ -129,10 +132,15 @@ void compose_draw() {
     }
   } else if (state_ == COMPOSE_STATE_CONFIRM) {
     setCursor(5, 0);
-    printf("Really send? (Y/N)");
-  } else if (state_ == COMPOSE_STATE_SENDING) {
+    printf("Really send? (Y/N/B)");
+  } else if (state_ == COMPOSE_STATE_SENDING ||
+             state_ == COMPOSE_STATE_BROADCAST_SEND) {
     setCursor(6, 0);
-    printf("Transmitting!");
+    if (state_ == COMPOSE_STATE_BROADCAST_SEND) {
+      printf("Transmitting on broadcast!");
+    } else {
+      printf("Transmitting!");
+    }
     setCursor(7, 0);
     putchar('8');
     /* The division on progress_ depends on the delay and timeout */
@@ -142,6 +150,13 @@ void compose_draw() {
       putchar('=');
     }
     putchar('D');
+  } else if (state_ == COMPOSE_STATE_BROADCAST_WAIT) {
+    setCursor(5, 0);
+    printf("In broadcast mode!");
+    setCursor(6, 0);
+    printf("Press \"S\" to stop.");
+    setCursor(7, 0);
+    printf("Next message in %d", wait_ / 10);
   }
 
   SSN = HIGH;
@@ -205,6 +220,22 @@ void compose_handle_keypress(uint8_t key) {
         state_ = COMPOSE_STATE_WRITING;
         compose_draw();
         break;
+      case 'B':
+        if (!message_still_sending()) {
+          state_ = COMPOSE_STATE_BROADCAST_SEND;
+          message_send(compose_buffer_,
+                       msg_id_, 0);
+          progress_ = 0;
+          compose_draw();
+        }
+    }
+  } else if (state_ == COMPOSE_STATE_BROADCAST_WAIT) {
+    switch (key) {
+      case 'S':
+        state_ = COMPOSE_STATE_WRITING;
+        compose_new_message();
+        compose_draw();
+        break;
     }
   }
 }
@@ -231,6 +262,35 @@ bit compose_tick() {
         switch_state(STATE_COMPOSE);
         display_print_message("Transmit timed out :(", 7, 0);
       }
+    }
+  } else if (state_ == COMPOSE_STATE_BROADCAST_SEND) {
+    if (message_still_sending()) {
+      ++progress_;
+      return 1;
+    } else {
+      if (message_send_succeeded()) {
+        inbox_push_message(compose_buffer_, 1, msg_id_);
+      }
+      state_ = COMPOSE_STATE_BROADCAST_WAIT;
+      /* Repeat about once a minute.  There are loads of other */
+      /* random delays scattered about the code, so this may be */
+      /* more like once every 2 minutes. */
+      wait_ = 60 * 10;
+    }
+  } else if (state_ == COMPOSE_STATE_BROADCAST_WAIT) {
+    if (--wait_) {
+      clock_delayms(100);
+      /* Don't flicker the screen too much. */
+      if (wait_ % 10 == 0) {
+        return 1;
+      } 
+    } else {
+      state_ = COMPOSE_STATE_BROADCAST_SEND;
+      message_send(compose_buffer_,
+                   msg_id_, 1);
+      progress_ = 0;
+      compose_draw();
+      return 1;
     }
   }
   return 0;
